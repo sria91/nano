@@ -8,25 +8,16 @@
 ## For the options that take parameters, the default value is given.
 ## Other options are unset by default.
 
-## Use auto-indentation.
+## Use auto-indentation
 # set autoindent
 
-## Backup files to filename~.
+## Backup files to filename~
 # set backup
-
-## The directory to put the backup files in.
-# set backupdir ""
-
-## The characters treated as closing brackets.  They cannot contain tabs
-## or spaces.  Only closing punctuation, optionally followed by closing
-## brackets, can end sentences.
-##
-# set brackets "'")}]>"
 
 ## Constantly display the cursor position in the status bar.
 # set const
 
-## Use cut to end of line with ^K by default.
+## Use cut to end of line with ^K by default
 # set cut
 
 ## Set the line length for wrapping text and justifying paragraphs.
@@ -38,26 +29,25 @@
 ## Enable ~/.nano_history for saving and reading search/replace strings.
 # set historylog
 
-## Enable mouse support so that mouse clicks can be used to set the mark
-## and run shortcuts.
-# set mouse
+## Use alternate keypad routines
+# set keypad
 
-## Allow multiple file buffers (using ^R will insert into a separate
-## buffer).  You must have configured with --enable-multibuffer or
-## --enable-extra for this to work.
+## Allow multiple file buffers (using ^R inserts into separate buffer).
+## You must have configured with --enable-multibuffer or --enable-extra
+## for this to work.
 ##
-# set multibuffer
+## set multibuffer
 
-## Don't convert files from DOS/Mac format.
+## Don't convert files from DOS/Mac format
 # set noconvert
 
-## Don't follow symlinks when writing files.
+## Don't follow symlinks when writing files
 # set nofollow
 
-## Don't display the helpful shortcut lists at the bottom of the screen.
+## Don't display the help lists at the bottom of the screen
 # set nohelp
 
-## Don't wrap text at all.
+## Don't wrap text at all
 # set nowrap
 
 ## Set operating directory.  nano will not read or write files outside
@@ -67,14 +57,8 @@
 ##
 # set operatingdir ""
 
-## Preserve the XON and XOFF keys (^Q and ^S).
+## Preserve the XON and XOFF keys (^Q and ^S)
 # set preserve
-
-## The characters treated as closing punctuation.  They cannot contain
-## tabs or spaces.  Only closing punctuation, optionally followed by
-## closing brackets, can end sentences.
-##
-# set punct ".?!"
 
 ## The email-quote string, used to justify email-quoted paragraphs.
 ## This is an extended regular expression if your system supports them,
@@ -85,20 +69,10 @@
 ## You can get old nano quoted-justify behavior via:
 # set quotestr "(> )+"
 
-## Fix Backspace/Delete confusion problem.
-# set rebinddelete
-
-## Do extended regular expression searches by default.
+## Do extended regular expression searches by default 
 # set regexp
 
-## Make the Home key smarter.  When Home is pressed anywhere but at the
-## very beginning of non-whitespace characters on a line, the cursor
-## will jump to that beginning (either forwards or backwards).  If the
-## cursor is already at that position, it will jump to the true
-## beginning of the line.
-# set smarthome
-
-## Use smooth scrolling as the default.
+## Use smooth scrolling as the default
 # set smooth
 
 ## Use this spelling checker instead of the internal one.  This option
@@ -106,21 +80,17 @@
 ##
 # set speller "aspell -c"
 
-## Allow nano to be suspended with ^Z.
+## Allow nano to be suspended with ^Z
 # set suspend
 
-## Use this tab size instead of the default; it must be greater than 0.
+## Use this tab size instead of the default; it must be greater than 0
 # set tabsize 8
 
-## Save automatically on exit, don't prompt.
+## Save automatically on exit, don't prompt
 # set tempfile
 
 ## Disallow file modification, why would you want this in an rc file? ;)
 # set view
-
-## The two characters used to display the first characters of tabs and
-## spaces.  ASCII 187 and ASCII 183 seem to be good values for these.
-# set whitespace "  "
 
 ## Color setup
 ## Format:
@@ -140,16 +110,16 @@
 # color red "\<[A-Z_]{2,}\>" 
 # color green "\<(float|char|int|void|static|const|struct)\>" 
 # color brightyellow "\<(if|while|do|else|case|switch)\>"
-# color brightcyan "^ *# *(define|include|ifn?def|endif|elif|else|if)" 
+# color brightcyan "^#( 	)*(define|include|ifn?def|endif|elif|else|if)" 
 ##
 ## You will in general want your comments and strings to come last,
 ## because syntax highlighting rules will be applied in the order they
 ## are read in.
 ##
-# color brightyellow "<[^= ]*>" ""(\\.|[^\"])*""
+# color brightyellow "<[^= 	]*>" ""(\\.|[^\"])*""
 ##
 ## This string is VERY resource intensive!!!
-# color brightyellow start=""(\\.|[^\"])*\\ *$" end="^(\\.|[^\"])*""
+# color brightyellow start=""(\\.|[^\"])*\\( |	)*$" end="^(\\.|[^\"])*""
 ##
 ## And we want to have some nice comment highlighting too
 # color brightblue "//.*"
@@ -158,7 +128,7 @@
 ## Here is a short example for HTML
 # syntax "HTML" "\.html$"
 # color blue start="<" end=">"
-# color red "&[^; ]*;"
+# color red "&[^; 	]*;"
 
 ## Here is a short example for TeX files
 # syntax "TeX" "\.tex$"
@@ -223,20 +193,16 @@
 # color blue "//.*"
 # color blue start="/\*" end="\*/"
 # color brightblue start="/\*\*" end="\*/"
-# color brightgreen,green " +$"
+# color brightgreen,brightgreen "[ 	]+$"
 
 ## Here is an example for your .nanorc
 ##
-#syntax "nanorc" "(\.|/|)nanorc$"
-## highlight possible errors and parameters
-#color brightwhite "^ *(set|unset|syntax|color).*$"
-## set, unset and syntax
-#color cyan "^ *(set|unset) +(autoindent|backup|backupdir|brackets|const|cut|fill|historylog|mouse|multibuffer|noconvert|nofollow|nohelp|nowrap|operatingdir|preserve|punct|quotestr|rebinddelete|regexp|smarthome|smooth|speller|suspend|tabsize|tempfile|view|whitespace)"
-#color green "^ *(set|unset|syntax)\>"
-## colors
-#color yellow "^ *color +(bright)?(white|black|red|blue|green|yellow|magenta|cyan)(,(white|black|red|blue|green|yellow|magenta|cyan))?\>"
-#color magenta "^ *color\>" "\<(start|end)="
-## strings
-#color white "\"(\\.|[^\"])*\""
-## comments
-#color blue "^ *#.*$"
+# syntax "nanorc" "[\.]*nanorc$"
+# color white "^ *(set|unset).*$"
+# color cyan "^ *(set|unset) (autoindent|backup|const|cut|fill|keypad|multibuffer|noconvert|nofollow|nohelp|nowrap|operatingdir|preserve|quotestr|regexp|smooth|speller|suspend|tabsize|tempfile|historylog|view)"
+# color brightwhite "^ *syntax [^ ]*"
+# color brightblue "^ *set\>" "^ *unset\>" "^ *syntax\>"
+# color white "^ *color\>.*"
+# color yellow "^ *color (bright)?(white|black|red|blue|green|yellow|magenta|cyan)\>"
+# color magenta "^ *color\>"
+# color green "^#.*$"

@@ -2,7 +2,7 @@
 /**************************************************************************
  *   utils.c                                                              *
  *                                                                        *
- *   Copyright (C) 1999-2004 Chris Allegretta                             *
+ *   Copyright (C) 1999-2003 Chris Allegretta                             *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -30,7 +30,6 @@
 #include "proto.h"
 #include "nano.h"
 
-#ifdef HAVE_REGEX_H
 #ifdef BROKEN_REGEXEC
 #undef regexec
 int regexec_safe(const regex_t *preg, const char *string, size_t nmatch,
@@ -41,31 +40,12 @@ int regexec_safe(const regex_t *preg, const char *string, size_t nmatch,
     return REG_NOMATCH;
 }
 #define regexec(preg, string, nmatch, pmatch, eflags) regexec_safe(preg, string, nmatch, pmatch, eflags)
-#endif /* BROKEN_REGEXEC */
-
-/* Assume that string will be found by regexec() if the REG_NOTBOL and
- * REG_NOTEOL glags are not set. */
-int regexp_bol_or_eol(const regex_t *preg, const char *string)
-{
-    return (regexec(preg, string, 0, NULL, REG_NOTBOL | REG_NOTEOL) ==
-	REG_NOMATCH);
-}
-#endif /* HAVE_REGEX_H */
-
-#ifndef HAVE_ISBLANK
-/* This function is equivalent to isblank(). */
-int is_blank_char(int c)
-{
-    return (c == '\t' || c == ' ');
-}
 #endif
 
-/* This function is equivalent to iscntrl(), except in that it also
- * handles control characters with their high bits set. */
 int is_cntrl_char(int c)
 {
     return (-128 <= c && c < -96) || (0 <= c && c < 32) ||
-	(127 <= c && c < 160);
+		(127 <= c && c < 160);
 }
 
 int num_of_digits(int n)
@@ -104,10 +84,9 @@ void null_at(char **data, size_t index)
 void unsunder(char *str, size_t true_len)
 {
     assert(str != NULL);
-    for (; true_len > 0; true_len--, str++) {
+    for(; true_len > 0; true_len--, str++)
 	if (*str == '\0')
 	    *str = '\n';
-    }
 }
 
 /* For non-null-terminated lines.  A line, by definition, shouldn't
@@ -115,10 +94,9 @@ void unsunder(char *str, size_t true_len)
 void sunder(char *str)
 {
     assert(str != NULL);
-    for (; *str != '\0'; str++) {
+    for(; *str != '\0'; str++)
 	if (*str == '\n')
 	    *str = '\0';
-    }
 }
 
 #ifndef HAVE_STRCASECMP
@@ -126,12 +104,10 @@ void sunder(char *str)
 int nstricmp(const char *s1, const char *s2)
 {
     assert(s1 != NULL && s2 != NULL);
-
     for (; *s1 != '\0' && *s2 != '\0'; s1++, s2++) {
 	if (tolower(*s1) != tolower(*s2))
 	    break;
     }
-
     return (tolower(*s1) - tolower(*s2));
 }
 #endif
@@ -141,49 +117,25 @@ int nstricmp(const char *s1, const char *s2)
 int nstrnicmp(const char *s1, const char *s2, size_t n)
 {
     assert(s1 != NULL && s2 != NULL);
-
     for (; n > 0 && *s1 != '\0' && *s2 != '\0'; n--, s1++, s2++) {
 	if (tolower(*s1) != tolower(*s2))
 	    break;
     }
-
     if (n > 0)
 	return (tolower(*s1) - tolower(*s2));
     else if (n == 0)
 	return 0;
-    else
+    else if (n < 0)
 	return -1;
-}
-#endif
-
-#ifndef HAVE_STRCASESTR
-/* This function is equivalent to strcasestr().  It was adapted from
- * mutt's mutt_stristr() function. */
-const char *nstristr(const char *haystack, const char *needle)
-{
-    assert(haystack != NULL && needle != NULL);
-
-    for (; *haystack != '\0'; haystack++) {
-	const char *p = haystack;
-	const char *q = needle;
-
-	for (; tolower(*p) == tolower(*q) && *q != '\0'; p++, q++)
-	    ;
-
-	if (*q == '\0')
-	    return haystack;
-    }
-
-    return NULL;
 }
 #endif
 
 /* None of this is needed if we're using NANO_SMALL! */
 #ifndef NANO_SMALL
-const char *revstrstr(const char *haystack, const char *needle, const
-	char *rev_start)
+const char *revstrstr(const char *haystack, const char *needle,
+			const char *rev_start)
 {
-    for (; rev_start >= haystack; rev_start--) {
+    for(; rev_start >= haystack ; rev_start--) {
 	const char *r, *q;
 
 	for (r = rev_start, q = needle ; *q == *r && *q != '\0'; r++, q++)
@@ -194,8 +146,8 @@ const char *revstrstr(const char *haystack, const char *needle, const
     return NULL;
 }
 
-const char *revstristr(const char *haystack, const char *needle, const
-	char *rev_start)
+const char *revstristr(const char *haystack, const char *needle,
+			const char *rev_start)
 {
     for (; rev_start >= haystack; rev_start--) {
 	const char *r = rev_start, *q = needle;
@@ -209,47 +161,50 @@ const char *revstristr(const char *haystack, const char *needle, const
 }
 #endif /* !NANO_SMALL */
 
-#ifndef HAVE_STRNLEN
-/* This function is equivalent to strnlen(). */
-size_t nstrnlen(const char *s, size_t maxlen)
+/* This is now mutt's version (called mutt_stristr) because it doesn't
+ * use memory allocation to do a simple search (yuck). */
+const char *stristr(const char *haystack, const char *needle)
 {
-    size_t n = 0;
+    const char *p, *q;
 
-    assert(s != NULL);
-
-    for (; maxlen > 0 && *s != '\0'; maxlen--, n++, s++)
-	;
-
-    return n;
-}
-#endif
-
-/* If we are searching backwards, we will find the last match that
- * starts no later than start.  Otherwise we find the first match
- * starting no earlier than start.  If we are doing a regexp search, we
- * fill in the global variable regmatches with at most 9 subexpression
- * matches.  Also, all .rm_so elements are relative to the start of the
- * whole match, so regmatches[0].rm_so == 0. */
-const char *strstrwrapper(const char *haystack, const char *needle,
-	const char *start)
-{
-    /* start can be 1 character before the start or after the end of the
-     * line.  In either case, we just say there is no match found. */
-    if ((start > haystack && *(start - 1) == '\0') || start < haystack)
+    if (haystack == NULL)
 	return NULL;
-    assert(haystack != NULL && needle != NULL && start != NULL);
+    if (needle == NULL)
+	return haystack;
+    
+    while (*(p = haystack) != '\0') {
+	for (q = needle; *p != 0 && *q != 0 && tolower(*p) == tolower(*q); p++, q++)
+	    ;
+	if (*q == 0)
+	    return haystack;
+	haystack++;
+    }
+    return NULL;
+}
+
+/* If we are searching backwards, we will find the last match
+ * that starts no later than rev_start.  If we are doing a regexp search,
+ * then line_pos should be 0 if haystack starts at the beginning of a
+ * line, and positive otherwise.  In the regexp case, we fill in the
+ * global variable regmatches with at most 9 subexpression matches.  Also,
+ * all .rm_so elements are relative to the start of the whole match, so
+ * regmatches[0].rm_so == 0. */
+const char *strstrwrapper(const char *haystack, const char *needle,
+			const char *rev_start, int line_pos)
+{
 #ifdef HAVE_REGEX_H
     if (ISSET(USE_REGEXP)) {
 #ifndef NANO_SMALL
 	if (ISSET(REVERSE_SEARCH)) {
-	    if (regexec(&search_regexp, haystack, 1, regmatches, 0) == 0
-		&& haystack + regmatches[0].rm_so <= start) {
+		/* When doing a backwards search, haystack is a whole line. */
+	    if (regexec(&search_regexp, haystack, 1, regmatches, 0) == 0 &&
+		    haystack + regmatches[0].rm_so <= rev_start) {
 		const char *retval = haystack + regmatches[0].rm_so;
 
 		/* Search forward until there is no more match. */
 		while (regexec(&search_regexp, retval + 1, 1, regmatches,
-			REG_NOTBOL) == 0 && retval + 1 +
-			regmatches[0].rm_so <= start)
+			    REG_NOTBOL) == 0 &&
+			retval + 1 + regmatches[0].rm_so <= rev_start)
 		    retval += 1 + regmatches[0].rm_so;
 		/* Finally, put the subexpression matches in global
 		 * variable regmatches.  The REG_NOTBOL flag doesn't
@@ -259,9 +214,9 @@ const char *strstrwrapper(const char *haystack, const char *needle,
 	    }
 	} else
 #endif /* !NANO_SMALL */
-	if (regexec(&search_regexp, start, 10, regmatches,
-		start > haystack ? REG_NOTBOL : 0) == 0) {
-	    const char *retval = start + regmatches[0].rm_so;
+	if (regexec(&search_regexp, haystack, 10, regmatches,
+			line_pos > 0 ? REG_NOTBOL : 0) == 0) {
+	    const char *retval = haystack + regmatches[0].rm_so;
 
 	    regexec(&search_regexp, retval, 10, regmatches, 0);
 	    return retval;
@@ -269,26 +224,21 @@ const char *strstrwrapper(const char *haystack, const char *needle,
 	return NULL;
     }
 #endif /* HAVE_REGEX_H */
-#if !defined(DISABLE_SPELLER) || !defined(NANO_SMALL)
+#ifndef NANO_SMALL
     if (ISSET(CASE_SENSITIVE)) {
-#ifndef NANO_SMALL
 	if (ISSET(REVERSE_SEARCH))
-	    return revstrstr(haystack, needle, start);
+	    return revstrstr(haystack, needle, rev_start);
 	else
+	    return strstr(haystack, needle);
+    } else if (ISSET(REVERSE_SEARCH))
+	return revstristr(haystack, needle, rev_start);
 #endif
-	    return strstr(start, needle);
-    }
-#endif /* !DISABLE_SPELLER || !NANO_SMALL */
-#ifndef NANO_SMALL
-    else if (ISSET(REVERSE_SEARCH))
-	return revstristr(haystack, needle, start);
-#endif
-    return strcasestr(start, needle);
+    return stristr(haystack, needle);
 }
 
-/* This is a wrapper for the perror() function.  The wrapper takes care
- * of ncurses, calls perror (which writes to stderr), then refreshes the
- * screen.  Note that nperror() causes the window to flicker once. */
+/* This is a wrapper for the perror function.  The wrapper takes care of 
+ * ncurses, calls perror (which writes to STDERR), then refreshes the 
+ * screen.  Note that nperror causes the window to flicker once. */
 void nperror(const char *s)
 {
     /* leave ncurses mode, go to the terminal */
@@ -323,11 +273,14 @@ void *nrealloc(void *ptr, size_t howmuch)
  * dest = mallocstrcpy(dest, src); */
 char *mallocstrcpy(char *dest, const char *src)
 {
-    if (src == NULL)
-	src = "";
+    if (src == dest)
+	return dest;
 
-    if (src != dest)
+    if (dest != NULL)
 	free(dest);
+
+    if (src == NULL)
+	return NULL;
 
     dest = charalloc(strlen(src) + 1);
     strcpy(dest, src);
@@ -348,28 +301,6 @@ void new_magicline(void)
     totlines++;
     totsize++;
 }
-
-#ifndef NANO_SMALL
-/* Set top_x and bot_x to the top and bottom x-coordinates of the mark,
- * respectively, based on the locations of top and bot. */
-void mark_order(const filestruct **top, size_t *top_x,
-		const filestruct **bot, size_t *bot_x)
-{
-    assert(top != NULL && top_x != NULL && bot != NULL && bot_x != NULL);
-    if ((current->lineno == mark_beginbuf->lineno && current_x > mark_beginx)
-	|| current->lineno > mark_beginbuf->lineno) {
-	*top = mark_beginbuf;
-	*top_x = mark_beginx;
-	*bot = current;
-	*bot_x = current_x;
-    } else {
-	*bot = mark_beginbuf;
-	*bot_x = mark_beginx;
-	*top = current;
-	*top_x = current_x;
-    }
-}
-#endif
 
 #ifndef DISABLE_TABCOMP
 /*

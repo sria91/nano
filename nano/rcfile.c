@@ -2,7 +2,7 @@
 /**************************************************************************
  *   rcfile.c                                                             *
  *                                                                        *
- *   Copyright (C) 1999-2004 Chris Allegretta                             *
+ *   Copyright (C) 1999-2003 Chris Allegretta                             *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -31,7 +31,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <pwd.h>
-#include <ctype.h>
 #include <assert.h>
 #include "proto.h"
 #include "nano.h"
@@ -42,10 +41,6 @@ const static rcoption rcopts[] = {
 #ifndef NANO_SMALL
     {"autoindent", AUTOINDENT},
     {"backup", BACKUP_FILE},
-    {"backupdir", 0},
-#endif
-#ifndef DISABLE_JUSTIFY
-    {"brackets", 0},
 #endif
     {"const", CONSTUPDATE},
 #ifndef NANO_SMALL
@@ -54,10 +49,8 @@ const static rcoption rcopts[] = {
 #ifndef DISABLE_WRAPJUSTIFY
     {"fill", 0},
 #endif
-#ifndef NANO_SMALL
-    {"historylog", HISTORYLOG},
-#endif
-#ifndef DISABLE_MOUSE
+    {"keypad", ALT_KEYPAD},
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
     {"mouse", USE_MOUSE},
 #endif
 #ifdef ENABLE_MULTIBUFFER
@@ -76,15 +69,12 @@ const static rcoption rcopts[] = {
 #endif
     {"preserve", PRESERVE},
 #ifndef DISABLE_JUSTIFY
-    {"punct", 0},
     {"quotestr", 0},
 #endif
-    {"rebinddelete", REBIND_DELETE},
 #ifdef HAVE_REGEX_H
     {"regexp", USE_REGEXP},
 #endif
 #ifndef NANO_SMALL
-    {"smarthome", SMART_HOME},
     {"smooth", SMOOTHSCROLL},
 #endif
 #ifndef DISABLE_SPELLER
@@ -95,7 +85,7 @@ const static rcoption rcopts[] = {
     {"tempfile", TEMP_OPT},
     {"view", VIEW_MODE},
 #ifndef NANO_SMALL
-    {"whitespace", 0},
+    {"historylog", HISTORYLOG},
 #endif
     {NULL, 0}
 };
@@ -140,7 +130,7 @@ void rcfile_msg(const char *msg, ...)
 /* Parse the next word from the string.  Returns NULL if we hit EOL. */
 char *parse_next_word(char *ptr)
 {
-    while (!isblank(*ptr) && *ptr != '\n' && *ptr != '\0')
+    while (*ptr != ' ' && *ptr != '\t' && *ptr != '\n' && *ptr != '\0')
 	ptr++;
 
     if (*ptr == '\0')
@@ -149,19 +139,18 @@ char *parse_next_word(char *ptr)
     /* Null terminate and advance ptr */
     *ptr++ = 0;
 
-    while (isblank(*ptr))
+    while (*ptr == ' ' || *ptr == '\t')
 	ptr++;
 
     return ptr;
 }
 
-/* The keywords operatingdir, backupdir, fill, tabsize, speller,
- * punct, brackets, quotestr, and whitespace take an argument when set.
- * Among these, operatingdir, backupdir, speller, punct, brackets,
- * quotestr, and whitespace have to allow tabs and spaces in the
- * argument.  Thus, if the next word starts with a ", we say it ends
- * with the last " of the line.  Otherwise, the word is interpreted as
- * usual.  That is so the arguments can contain "s too. */
+/* The keywords operatingdir, fill, tabsize, speller, and quotestr take
+ * an argument when set.  Among these, operatingdir, speller, and
+ * quotestr have to allow tabs and spaces in the argument.  Thus, if the
+ * next word starts with a ", we say it ends with the last " of the line.
+ * Otherwise, the word is interpreted as usual.  That is so the arguments
+ * can contain "s too. */
 char *parse_argument(char *ptr)
 {
     const char *ptr_bak = ptr;
@@ -183,13 +172,13 @@ char *parse_argument(char *ptr)
 	    ptr = NULL;
 	else
 	    *ptr++ = '\0';
-	rcfile_error(_("Argument %s has unterminated \""), ptr_bak);
+	rcfile_error(_("argument %s has unterminated \""), ptr_bak);
     } else {
 	*last_quote = '\0';
 	ptr = last_quote + 1;
     }
     if (ptr != NULL)
-	while (isblank(*ptr))
+	while (*ptr == ' ' || *ptr == '\t')
 	    ptr++;
     return ptr;
 }
@@ -225,11 +214,11 @@ int colortoint(const char *colorname, int *bright)
     else if (!strcasecmp(colorname, "black"))
 	mcolor = COLOR_BLACK;
     else {
-	rcfile_error(_("Color %s not understood.\n"
-			"Valid colors are \"green\", \"red\", \"blue\", \n"
-			"\"white\", \"yellow\", \"cyan\", \"magenta\" and \n"
-			"\"black\", with the optional prefix \"bright\" \n"
-			"for foreground colors.\n"), colorname);
+	rcfile_error(_("color %s not understood.\n"
+		       "Valid colors are \"green\", \"red\", \"blue\", \n"
+		       "\"white\", \"yellow\", \"cyan\", \"magenta\" and \n"
+		       "\"black\", with the optional prefix \"bright\".\n"),
+			colorname);
 	mcolor = -1;
     }
     return mcolor;
@@ -244,10 +233,10 @@ char *parse_next_regex(char *ptr)
     if (*ptr == '\0')
 	return NULL;
 
-    /* Null terminate and advance ptr. */
+    /* Null terminate and advance ptr */
     *ptr++ = '\0';
 
-    while (isblank(*ptr))
+    while (*ptr == ' ' || *ptr == '\t')
 	ptr++;
 
     return ptr;
@@ -284,7 +273,7 @@ void parse_syntax(char *ptr)
 	return;
 
     if (*ptr != '"') {
-	rcfile_error(_("Regex strings must begin and end with a \" character\n"));
+	rcfile_error(_("regex strings must begin and end with a \" character\n"));
 	return;
     }
     ptr++;
@@ -336,7 +325,7 @@ void parse_syntax(char *ptr)
 	ptr = parse_next_regex(ptr);
 
 	newext = (exttype *)nmalloc(sizeof(exttype));
-	if (nregcomp(&newext->val, fileregptr, REG_NOSUB) != 0)
+	if (nregcomp(&newext->val, fileregptr, REG_NOSUB))
 	    free(newext);
 	else {
 	    if (endext == NULL)
@@ -367,14 +356,8 @@ void parse_colors(char *ptr)
     }
 
     if (strstr(fgstr, ",")) {
-	char *bgcolorname;
 	strtok(fgstr, ",");
-	bgcolorname = strtok(NULL, ",");
-	if (!strncasecmp(bgcolorname, "bright", 6)) {
-	    rcfile_error(_("Background color %s cannot be bright"), bgcolorname);
-	    return;
-	}
-	bg = colortoint(bgcolorname, &bright);
+	bg = colortoint(strtok(NULL, ","), &bright);
     } else
 	bg = -1;
 
@@ -414,7 +397,7 @@ void parse_colors(char *ptr)
 	}
 
 	if (*ptr != '"') {
-	    rcfile_error(_("Regex strings must begin and end with a \" character\n"));
+	    rcfile_error(_("regex strings must begin and end with a \" character\n"));
 	    ptr = parse_next_regex(ptr);
 	    continue;
 	}
@@ -423,7 +406,7 @@ void parse_colors(char *ptr)
 	newcolor = (colortype *)nmalloc(sizeof(colortype));
 	fgstr = ptr;
 	ptr = parse_next_regex(ptr);
-	if (nregcomp(&newcolor->start, fgstr, 0) != 0) {
+	if (nregcomp(&newcolor->start, fgstr, 0)) {
 	    free(newcolor);
 	    cancelled = 1;
 	} else {
@@ -461,7 +444,7 @@ void parse_colors(char *ptr)
 
 	    if (*ptr != '"') {
 		rcfile_error(_
-			     ("Regex strings must begin and end with a \" character\n"));
+			     ("regex strings must begin and end with a \" character\n"));
 		continue;
 	    }
 	    ptr++;
@@ -474,7 +457,7 @@ void parse_colors(char *ptr)
 	    if (cancelled)
 		continue;
 	    newcolor->end = (regex_t *)nmalloc(sizeof(regex_t));
-	    if (nregcomp(newcolor->end, fgstr, 0) != 0) {
+	    if (nregcomp(newcolor->end, fgstr, 0)) {
 		free(newcolor->end);
 		newcolor->end = NULL;
 	    }
@@ -494,7 +477,7 @@ void parse_rcfile(FILE *rcstream)
     while (fgets(buf, 1023, rcstream) != 0) {
 	lineno++;
 	ptr = buf;
-	while (isblank(*ptr))
+	while (*ptr == ' ' || *ptr == '\t')
 	    ptr++;
 
 	if (*ptr == '\n' || *ptr == '\0')
@@ -525,7 +508,7 @@ void parse_rcfile(FILE *rcstream)
 	    parse_colors(ptr);
 #endif				/* ENABLE_COLOR */
 	else {
-	    rcfile_msg(_("Command %s not understood"), keyword);
+	    rcfile_msg(_("command %s not understood"), keyword);
 	    continue;
 	}
 
@@ -548,16 +531,8 @@ void parse_rcfile(FILE *rcstream)
 #ifndef DISABLE_WRAPJUSTIFY
 				|| !strcasecmp(rcopts[i].name, "fill")
 #endif
-#ifndef NANO_SMALL
-				|| !strcasecmp(rcopts[i].name, "whitespace")
-#endif
 #ifndef DISABLE_JUSTIFY
-				|| !strcasecmp(rcopts[i].name, "punct")
-				|| !strcasecmp(rcopts[i].name, "brackets")
 				|| !strcasecmp(rcopts[i].name, "quotestr")
-#endif
-#ifndef NANO_SMALL
-			        || !strcasecmp(rcopts[i].name, "backupdir")
 #endif
 #ifndef DISABLE_SPELLER
 				|| !strcasecmp(rcopts[i].name, "speller")
@@ -565,7 +540,7 @@ void parse_rcfile(FILE *rcstream)
 				) {
 			    if (*ptr == '\n' || *ptr == '\0') {
 				rcfile_error(_
-					     ("Option %s requires an argument"),
+					     ("option %s requires an argument"),
 					     rcopts[i].name);
 				continue;
 			    }
@@ -590,47 +565,15 @@ void parse_rcfile(FILE *rcstream)
 				 * errors. */
 				j = (int)strtol(option, &first_error, 10);
 				if (errno == ERANGE || *option == '\0' || *first_error != '\0')
-				    rcfile_error(_("Requested fill size %d invalid"),
+				    rcfile_error(_("requested fill size %d invalid"),
 						 j);
 				else
 				    wrap_at = j;
 			    } else
 #endif
-#ifndef NANO_SMALL
-			    if (!strcasecmp(rcopts[i].name, "whitespace")) {
-				size_t ws_len;
-				whitespace = mallocstrcpy(NULL, option);
-				ws_len = strlen(whitespace);
-				if (ws_len != 2 || (ws_len == 2 && (is_cntrl_char(whitespace[0]) || is_cntrl_char(whitespace[1])))) {
-				    rcfile_error(_("Two non-control characters required"));
-				    free(whitespace);
-				    whitespace = NULL;
-				} else
-				    SET(WHITESPACE_DISPLAY);
-			    } else
-#endif
 #ifndef DISABLE_JUSTIFY
-			    if (!strcasecmp(rcopts[i].name, "punct")) {
-				punct = mallocstrcpy(NULL, option);
-				if (strchr(punct, '\t') != NULL || strchr(punct, ' ') != NULL) {
-				    rcfile_error(_("Non-tab and non-space characters required"));
-				    free(punct);
-				    punct = NULL;
-				}
-			    } else if (!strcasecmp(rcopts[i].name, "brackets")) {
-				brackets = mallocstrcpy(NULL, option);
-				if (strchr(brackets, '\t') != NULL || strchr(brackets, ' ') != NULL) {
-				    rcfile_error(_("Non-tab and non-space characters required"));
-				    free(brackets);
-				    brackets = NULL;
-				}
-			    } else if (!strcasecmp(rcopts[i].name, "quotestr"))
+			    if (!strcasecmp(rcopts[i].name, "quotestr"))
 				quotestr = mallocstrcpy(NULL, option);
-			    else
-#endif
-#ifndef NANO_SMALL
-			    if (!strcasecmp(rcopts[i].name, "backupdir"))
-				backup_dir = mallocstrcpy(NULL, option);
 			    else
 #endif
 #ifndef DISABLE_SPELLER
@@ -638,7 +581,7 @@ void parse_rcfile(FILE *rcstream)
 				alt_speller = mallocstrcpy(NULL, option);
 			    else
 #endif
-			    if (!strcasecmp(rcopts[i].name, "tabsize")) {
+			    {
 				char *first_error;
 
 				/* Using strtol instead of atoi lets us
@@ -646,7 +589,7 @@ void parse_rcfile(FILE *rcstream)
 				 * errors. */
 				j = (int)strtol(option, &first_error, 10);
 				if (errno == ERANGE || *option == '\0' || *first_error != '\0')
-				    rcfile_error(_("Requested tab size %d invalid"),
+				    rcfile_error(_("requested tab size %d invalid"),
 						 j);
 				else
 				    tabsize = j;
@@ -718,7 +661,7 @@ void do_rcfile(void)
     if (!ISSET(NO_RCFILE)) {
 
 #if defined(DISABLE_ROOTWRAP) && !defined(DISABLE_WRAPPING)
-    /* If we've already read SYSCONFDIR/nanorc (if it's there), we're
+    /* If we've already read $SYSCONFDIR/nanorc (if it's there), we're
        root, and --disable-wrapping-as-root is used, turn wrapping off */
 	if (euid == NANO_ROOT_UID)
 	    SET(NO_WRAP);

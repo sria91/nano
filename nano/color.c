@@ -2,7 +2,7 @@
 /**************************************************************************
  *   color.c                                                              *
  *                                                                        *
- *   Copyright (C) 1999-2004 Chris Allegretta                             *
+ *   Copyright (C) 1999-2003 Chris Allegretta                             *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -39,14 +39,14 @@ void set_colorpairs(void)
 {
     const syntaxtype *this_syntax = syntaxes;
 
-    for (; this_syntax != NULL; this_syntax = this_syntax->next) {
+    for(; this_syntax != NULL; this_syntax = this_syntax->next) {
 	colortype *this_color = this_syntax->color;
 	int color_pair = 1;
 
-	for (; this_color != NULL; this_color = this_color->next) {
+	for(; this_color != NULL; this_color = this_color->next) {
 	    const colortype *beforenow = this_syntax->color;
 
-	    for (; beforenow != NULL && beforenow != this_color && 
+	    for(; beforenow != NULL && beforenow != this_color && 
 			(beforenow->fg != this_color->fg ||
 			 beforenow->bg != this_color->bg ||
 			 beforenow->bright != this_color->bright);
@@ -119,7 +119,7 @@ void update_color(void)
 
     /* if we haven't found a match, use the override string */
     if (colorstrings == NULL && syntaxstr != NULL) {
-	for (tmpsyntax = syntaxes; tmpsyntax != NULL;
+	for (tmpsyntax = syntaxes; tmpsyntax != NULL; 
 	     tmpsyntax = tmpsyntax->next) {
 	    if (!strcasecmp(tmpsyntax->desc, syntaxstr))
 		colorstrings = tmpsyntax->color;

@@ -2,32 +2,31 @@
 #
 # Copyright (C) 1999, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
 #
-# GNU nano is free software; you can redistribute it and/or modify
+# GNU Nano is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2, or (at your option)
 # any later version.
 #
-# GNU nano is distributed in the hope that it will be useful,
+# GNU Nano is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GNU nano; if not, write to the Free Software
+# along with GNU Nano; if not, write to the Free Software
 # Foundation, Inc.
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 # $Id$
 
-AC_INIT([GNU nano], [1.3.2-cvs], [nano-devel@gnu.org], [nano])
-AC_CONFIG_SRCDIR([src/nano.c])
+AC_INIT([GNU Nano], [1.2.4], [nano-devel@gnu.org], [nano])
+AC_CONFIG_SRCDIR([nano.c])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([config.h:config.h.in])
 
-AC_PREREQ(2.54)
+AC_PREREQ(2.52)
 
 dnl Checks for programs.
-AC_GNU_SOURCE
 AC_PROG_CC
 AC_ISC_POSIX
 AC_SYS_LARGEFILE
@@ -44,16 +43,7 @@ AC_CHECK_HEADER(regex.h,
     AC_TRY_RUN([
 #include <sys/types.h>
 #include <regex.h>
-int main(void)
-{
-    regex_t reg;
-    size_t n = 1;
-    regmatch_t r;
-    regcomp(&reg, "\\<", 0);
-    regexec(&reg, "", n, &r, 0);
-    regfree(&reg);
-    return 0;
-}],
+int main () { regex_t reg; size_t n = 1; regmatch_t r; regcomp(&reg, "\\<", 0); regexec(&reg, "", n, &r, 0); regfree(&reg); return 0; }],
 	AC_MSG_RESULT(no),
 	AC_MSG_RESULT(yes); AC_DEFINE(BROKEN_REGEXEC, 1, [Define this if your regexec() function segfaults when passed an empty string under certain conditions.])
     )
@@ -209,12 +199,9 @@ AC_ARG_WITH(slang,
 	    _libs=$LIBS
 	    LIBS="$LIBS -lslang"
 	    AC_TRY_RUN([
+#include <stdio.h>
 #include <slcurses.h>
-int main(void)
-{
-    SLtt_initialize(NULL);
-    return 0;
-}],
+int main () { SLtt_initialize (NULL); return 0; }],
 		[AC_MSG_RESULT(yes)
 		AC_DEFINE(USE_SLANG, 1, [Define to use the slang wrappers for curses instead of native curses.])
 		slang_support=yes
@@ -234,12 +221,9 @@ int main(void)
 		AC_MSG_CHECKING([for SLtt_initialize in -lslang $tcap])
 		LIBS="$LIBS $tcap"
 		AC_TRY_RUN([
+#include <stdio.h>
 #include <slcurses.h>
-int main(void)
-{
-    SLtt_initialize(NULL);
-    return 0;
-}],
+int main () { SLtt_initialize (NULL); return 0; }],
 		    [AC_MSG_RESULT(yes)
 		    AC_DEFINE(USE_SLANG, 1, [Define to use the slang wrappers for curses instead of native curses.])
 		    slang_support=yes
@@ -254,12 +238,9 @@ int main(void)
 		    AC_MSG_CHECKING([for SLtt_initialize in -lslang $tcap -lm])
 		    LIBS="$LIBS -lm"
 		    AC_TRY_RUN([
+#include <stdio.h>
 #include <slcurses.h>
-int main(void)
-{
-    SLtt_initialize(NULL);
-    return 0;
-}],
+int main () { SLtt_initialize (NULL); return 0; }],
 			[AC_MSG_RESULT(yes)
 			AC_DEFINE(USE_SLANG, 1, [Define to use the slang wrappers for curses instead of native curses.])
 			slang_support=yes
@@ -289,16 +270,17 @@ AC_MSG_WARN([*** Can not use slang when cross-compiling])),
     esac], [AC_MSG_RESULT(no)])
 
 dnl Checks for functions
-AC_CHECK_FUNCS(snprintf vsnprintf isblank strcasecmp strncasecmp strcasestr strnlen)
+AC_CHECK_FUNCS(snprintf vsnprintf strcasecmp strncasecmp)
 if test "x$ac_cv_func_snprintf" = "xno" -o "xac_cv_func_vsnprintf" = "xno"
 then
-	AM_PATH_GLIB_2_0(2.0.0,,
-	    [AM_PATH_GLIB(1.2.4,,
-		[AC_MSG_ERROR([
+	AM_PATH_GLIB(1.2.4,,
+	    [AC_MSG_ERROR([
 *** snprintf() and/or vsnprintf() not found.  GLIB not found either.
 *** You need both snprintf() and vsnprintf().  Alternatively you can
 *** install the GLIB library which can be found at ftp://ftp.gtk.org/.])],
-		glib)])
+	    glib)
+	glib_cflags=`$GLIB_CONFIG --cflags glib`
+	glib_libs=`$GLIB_CONFIG --libs glib`
 fi
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -345,6 +327,21 @@ fi
 
 
 AC_CHECK_LIB([$CURSES_LIB_NAME], use_default_colors, AC_DEFINE(HAVE_USE_DEFAULT_COLORS, 1, [Define this if your curses library has the use_default_colors command.]))
+if test x$slang_support != xyes; then
+    # Taken from aumix (can't tell from the variable name?)
+    AC_CACHE_CHECK([for private member _use_keypad in WINDOW],
+    aumix_cv_struct_window_usekeypad,
+    [AC_TRY_COMPILE([#ifdef HAVE_NCURSES_H
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif], [WINDOW w; w._use_keypad;],
+    aumix_cv_struct_window_usekeypad=yes, aumix_cv_struct_window_usekeypad=no)])
+    
+    if test $aumix_cv_struct_window_usekeypad = yes; then
+	AC_DEFINE(HAVE_USEKEYPAD, 1, [Define this if your curses lib has the _use_keypad flag.])
+    fi
+fi
 
 dnl Parse any configure options
 
@@ -352,25 +349,14 @@ LIBS="$LIBS $CURSES_LIB"
 
 AC_SUBST(CURSES_LIB)
 
-if test "x$GLIB_CFLAGS" != "x"
+if test "x$glib_cflags" != "x"
 then
-	CFLAGS="$CFLAGS $GLIB_CFLAGS"
+	CFLAGS="$CFLAGS $glib_cflags"
 fi
-if test "x$GLIB_LIBS" != "x"
+if test "x$glib_libs" != "x"
 then
-	LDFLAGS="$LDFLAGS $GLIB_LIBS"
+	LDFLAGS="$LDFLAGS $glib_libs"
 fi
 
-AC_CONFIG_FILES([
-Makefile
-doc/Makefile
-doc/man/Makefile
-doc/man/fr/Makefile
-doc/texinfo/Makefile
-m4/Makefile
-po/Makefile.in
-src/Makefile
-nano.spec
-])
-
+AC_CONFIG_FILES([Makefile m4/Makefile po/Makefile.in nano.spec])
 AC_OUTPUT
