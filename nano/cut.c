@@ -58,76 +58,28 @@ void add_to_cutbuffer(filestruct * inptr)
 }
 
 #ifndef NANO_SMALL
-/* Cut a marked segment instead of a whole line.  Only called from
-   do_cut_text().
-   destructive is whether to actually modify the file structure, if not then
-   just copy the buffer into cutbuffer and don't pull it from the file */
-
 void cut_marked_segment(filestruct * top, int top_x, filestruct * bot,
-			int bot_x, int destructive)
+			int bot_x)
 {
     filestruct *tmp, *next, *botcopy;
     char *tmpstr;
-    int newsize;
-
-    /* Special case for cutting part of one line */
-    if (top == bot) {
-        int swap;
-
-	tmp = copy_node(top);
-	newsize = abs(bot_x - top_x) + 1;
-	tmpstr = charalloc(newsize + 1);
-
-	/* Make top_x always be before bot_x */
-	if (top_x > bot_x) {
-	    swap = top_x;
-	    top_x = bot_x;
-	    bot_x = swap;
-	}
-
-	strncpy(tmpstr, &top->data[top_x], newsize);
-
-	if (destructive) {
-	    memmove(&top->data[top_x], &top->data[bot_x],
-		strlen(&top->data[bot_x]) + 1);
-	    align(&top->data);
-	    current_x = top_x;
-	    update_cursor();
-	}
-	tmpstr[newsize - 1] = 0;
-	tmp->data = tmpstr;
-	add_to_cutbuffer(tmp);
-	dump_buffer(cutbuffer);
-
-	return;
-    }
 
     /* Set up the beginning of the cutbuffer */
     tmp = copy_node(top);
-    tmpstr = charalloc(strlen(&top->data[top_x]) + 1);
+    tmpstr = nmalloc(strlen(&top->data[top_x]) + 1);
     strcpy(tmpstr, &top->data[top_x]);
     free(tmp->data);
     tmp->data = tmpstr;
 
     /* Chop off the end of the first line */
-    tmpstr = charalloc(top_x + 1);
+    tmpstr = nmalloc(top_x + 1);
     strncpy(tmpstr, top->data, top_x);
-
-    if (destructive) {
-	free(top->data);
-	top->data = tmpstr;
-    }
+    free(top->data);
+    top->data = tmpstr;
 
     do {
 	next = tmp->next;
-	if (destructive)
-	    add_to_cutbuffer(tmp);
-	else {
-	    filestruct *tmpcopy = NULL;
-	    
-	    tmpcopy = copy_node(tmp);
-	    add_to_cutbuffer(tmpcopy);
-	}
+	add_to_cutbuffer(tmp);
 	totlines--;
 	totsize--;		/* newline (add_to_cutbuffer doesn't count newlines) */
 	tmp = next;
@@ -137,57 +89,50 @@ void cut_marked_segment(filestruct * top, int top_x, filestruct * bot,
     dump_buffer(cutbuffer);
     if (next == NULL)
 	return;
-
     /* Now, paste bot[bot_x] into top[top_x] */
-    if (destructive) {
+    tmpstr = nmalloc(top_x + strlen(&bot->data[bot_x]) + 1);
+    strncpy(tmpstr, top->data, top_x);
+    strcpy(&tmpstr[top_x], &bot->data[bot_x]);
+    free(top->data);
+    top->data = tmpstr;
 
-	tmpstr = charalloc(top_x + strlen(&bot->data[bot_x]) + 1);
-	strncpy(tmpstr, top->data, top_x);
-	strcpy(&tmpstr[top_x], &bot->data[bot_x]);
-	free(top->data);
-	top->data = tmpstr;
+    null_at(&bot->data, bot_x);
+    next = bot->next;
 
-	/* We explicitly don't decrement totlines here because we don't snarf
-	 * up a newline when we're grabbing the last line of the mark.  For
- 	 * the same reason, we don't do an extra totsize decrement. */
-    }
+    /* We explicitly don't decrement totlines here because we don't snarf
+     * up a newline when we're grabbing the last line of the mark.  For
+     * the same reason, we don't do an extra totsize decrement. */
+
 
     /* I honestly do not know why this is needed.  After many hours of
-	using gdb on an OpenBSD box, I can honestly say something is 
- 	screwed somewhere.  Not doing this causes update_line to annihilate
-	the last line copied into the cutbuffer when the mark is set ?!?!? */
+       using gdb on an OpenBSD box, I can honestly say something is 
+       screwed somewhere.  Not doing this causes update_line to annihilate
+       the last line copied into the cutbuffer when the mark is set ?!?!? */
     botcopy = copy_node(bot);
-    null_at(&botcopy->data, bot_x);
-    next = botcopy->next;
     add_to_cutbuffer(botcopy);
+    free(bot);
 
+    top->next = next;
+    if (next != NULL)
+	next->prev = top;
 
-    if (destructive) {
-	free(bot);
+    dump_buffer(cutbuffer);
+    renumber(top);
+    current = top;
+    current_x = top_x;
 
-	top->next = next;
- 	if (next != NULL)
-	    next->prev = top;
-
-	dump_buffer(cutbuffer);
-	renumber(top);
-	current = top;
- 	current_x = top_x;
-
- 	/* If we're hitting the end of the buffer, we should clean that up. */
-	if (bot == filebot) {
-	    if (next != NULL) {
-		filebot = next;
-	    } else {
-		filebot = top;
-		if (top_x > 0)
-		    new_magicline();
-	    }
+    /* If we're hitting the end of the buffer, we should clean that up. */
+    if (bot == filebot) {
+	if (next != NULL) {
+	    filebot = next;
+	} else {
+	    filebot = top;
+	    if (top_x > 0)
+		new_magicline();
 	}
-	if (top->lineno < edittop->lineno)
-	    edit_update(top, CENTER);
     }
-
+    if (top->lineno < edittop->lineno)
+	edit_update(top, CENTER);
 }
 #endif
 
@@ -195,8 +140,9 @@ int do_cut_text(void)
 {
     filestruct *tmp, *fileptr = current;
 #ifndef NANO_SMALL
+    char *tmpstr;
+    int newsize, cuttingtoend = 0;
     int dontupdate = 0;
-    int cuttingtoend = 0;
 #endif
 
 
@@ -253,20 +199,44 @@ int do_cut_text(void)
 	    cuttingtoend = 1;
 	}
     }
-
     if (ISSET(MARK_ISSET)) {
-	if (current->lineno <= mark_beginbuf->lineno) {
+	if (current->lineno == mark_beginbuf->lineno) {
+	    dontupdate = 1;
+	    tmp = copy_node(current);
+	    newsize = abs(mark_beginx - current_x) + 1;
+
+	    tmpstr = nmalloc(newsize + 1);
+	    if (current_x < mark_beginx) {
+		strncpy(tmpstr, &current->data[current_x], newsize);
+		memmove(&current->data[current_x],
+			&current->data[mark_beginx],
+			strlen(&current->data[mark_beginx]) + 1);
+	    } else {
+		strncpy(tmpstr, &current->data[mark_beginx], newsize);
+		memmove(&current->data[mark_beginx],
+			&current->data[current_x],
+			strlen(&current->data[current_x]) + 1);
+		current_x = mark_beginx;
+		update_cursor();
+	    }
+	    tmpstr[newsize - 1] = 0;
+	    tmp->data = tmpstr;
+	    add_to_cutbuffer(tmp);
+	    dump_buffer(cutbuffer);
+	    align(&current->data);
+	} else if (current->lineno < mark_beginbuf->lineno) {
+
 	    /* Don't do_update and move the screen position if the marked
 		area lies entirely within the screen buffer */
-	    if (current->lineno == mark_beginbuf->lineno
-		|| (current->lineno >= edittop->lineno
-		&& mark_beginbuf->lineno <= editbot->lineno))
+	    if (current->lineno >= edittop->lineno
+		&& mark_beginbuf->lineno <= editbot->lineno)
 		dontupdate = 1;
 
 	    cut_marked_segment(current, current_x, mark_beginbuf,
-			       mark_beginx, 1);
+			       mark_beginx);
 	}
 	else {
+
 	    /* Same as above, easier logic since we know it's a multi-line
 		cut and mark_beginbuf is before current */
 	    if (mark_beginbuf->lineno >= edittop->lineno
@@ -274,9 +244,8 @@ int do_cut_text(void)
 		dontupdate = 1;
 
 	    cut_marked_segment(mark_beginbuf, mark_beginx, current,
-			       current_x, 1);
+			       current_x);
 	}
-
 
 	placewewant = xplustabs();
 	UNSET(MARK_ISSET);
@@ -308,7 +277,7 @@ int do_cut_text(void)
 	} else {
 	    add_to_cutbuffer(fileptr);
 	    fileage = make_new_node(NULL);
-	    fileage->data = charalloc(1);
+	    fileage->data = nmalloc(1);
 	    fileage->data[0] = '\0';
 	    current = fileage;
 	}
@@ -371,7 +340,7 @@ int do_uncut_text(void)
 	/* If there's only one line in the cutbuffer */
 	if (cutbuffer->next == NULL) {
 	    tmpstr =
-		charalloc(strlen(current->data) + strlen(cutbuffer->data) +
+		nmalloc(strlen(current->data) + strlen(cutbuffer->data) +
 			1);
 	    strncpy(tmpstr, current->data, current_x);
 	    strcpy(&tmpstr[current_x], cutbuffer->data);
@@ -388,13 +357,13 @@ int do_uncut_text(void)
 	} else {		/* yuck -- no kidding! */
 	    tmp = current->next;
 	    /* New beginning */
-	    tmpstr = charalloc(current_x + strlen(newbuf->data) + 1);
+	    tmpstr = nmalloc(current_x + strlen(newbuf->data) + 1);
 	    strncpy(tmpstr, current->data, current_x);
 	    strcpy(&tmpstr[current_x], newbuf->data);
 	    totsize += strlen(newbuf->data) + strlen(newend->data) + 1;
 
 	    /* New end */
-	    tmpstr2 = charalloc(strlen(newend->data) +
+	    tmpstr2 = nmalloc(strlen(newend->data) +
 			      strlen(&current->data[current_x]) + 1);
 	    strcpy(tmpstr2, newend->data);
 	    strcat(tmpstr2, &current->data[current_x]);
@@ -448,7 +417,7 @@ int do_uncut_text(void)
 
 	if (marked_cut == 2) {
 	    tmp = make_new_node(current);
-	    tmp->data = charalloc(strlen(&current->data[current_x]) + 1);
+	    tmp->data = nmalloc(strlen(&current->data[current_x]) + 1);
 	    strcpy(tmp->data, &current->data[current_x]);
 	    splice_node(current, tmp, current->next);
 	    null_at(&current->data, current_x);
