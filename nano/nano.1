@@ -1,12 +1,14 @@
 .\" Hey, EMACS: -*- nroff -*-
-.\" nano.1 is copyright 1999-2002 by
+.\" nano.1 is copyright 1999-2000 by
 .\" Chris Allegretta <chrisa@asty.org>
 .\"
 .\" This is free documentation, see the latest version of the GNU General
 .\" Public License for copying conditions. There is NO warranty.
 .\"
-.\" $Id$
-.TH NANO 1 "January 3, 2002"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH NANO 1 "April 30, 2001"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
@@ -31,39 +33,21 @@ also implements some missing (or disabled by default) features in Pico,
 such as "search and replace" and "goto line number".
 .SH OPTIONS
 .TP
-.B \-D (\-\-dos)
-Write file in DOS format.
-.TP
-.B \-F (\-\-multibuffer)
-Enable multiple file buffers (if available).
-.TP
-.B \-K (\-\-keypad)
-Do not use the ncurses keypad() call unless necessary.  Try this flag if 
-you find that the arrow keys on the numeric keypad do not work for you 
-under nano.
-.TP
-.B \-M (\-\-mac)
-Write file in Mac format.
+.B \-T (\-\-tabsize)
+Set the size (width) of a tab.
 .TP
 .B \-R (\-\-regexp)
 Enable regular expression matching for search strings, as well as
 \\n subexpression replacement for replace strings, if available.
 .TP
-.B \-S (\-\-smooth)
-Enable smooth scrolling. Text will scroll line-by-line, instead of the
-usual chunk-by-chunk behaviour.
-.TP
-.B \-T [num] (\-\-tabsize=[num])
-Set the size (width) of a tab.
-.TP
 .B \-V (\-\-version)
 Show the current version number and author.
 .TP
-.B \-c (\-\-const)
-Constantly show the cursor position.
-.TP
 .B \-h (\-\-help)
 Display a summary of command line options.
+.TP
+.B \-c (\-\-const)
+Constantly show the cursor position.
 .TP
 .B \-i (\-\-autoindent)
 Indent new lines to the previous line's indentation. Useful when editing
@@ -79,21 +63,16 @@ a new file, do not follow it.  Good for editing files in /tmp, perhaps?
 .B \-m (\-\-mouse)
 Enable mouse support (if available for your system).
 .TP
-.B \-o [dir] (\-\-operatingdir=[dir])
-Set operating directory. Makes nano set up something similar to a chroot.
-.TP
 .B \-p (\-\-pico)
 Emulate Pico as closely as possible.  This affects both the "shortcut list"
 at the bottom of the screen, as well as the display and entry of previous
 search and replace strings.
 .TP
-.B \-r [#cols] (\-\-fill=[#cols])
-Wrap lines at column #cols.  By default, this is the width of the screen,
-less eight.  If this value is negative, wrapping will occur at #cols from
-the right of the screen, allowing it to vary along with the screen width
-if the screen is resized.
+.B \-r (\-\-fill)
+Wrap lines at column #cols.  By default this is the width of the screen,
+less eight.
 .TP
-.B \-s [prog] (\-\-speller=[prog])
+.B \-s (\-\-speller)
 Enable alternative spell checker command.
 .TP
 .B \-t (\-\-tempfile)
@@ -111,7 +90,7 @@ Disable help screen at bottom of editor.
 .B \-z (\-\-suspend)
 Enable suspend ability.
 .TP
-.B \-a, \-b, \-e, \-f, \-g, \-j
+.B \-b, \-e, \-f
 Ignored, for compatibility with Pico.
 .TP
 .B \+LINE
@@ -121,9 +100,8 @@ Nano will try to dump the buffer into an emergency file in some cases.
 Mainly, this will happen if Nano receives a SIGHUP or runs out of
 memory, when it will write the buffer into a file named "nano.save" if the
 buffer didn't have a name already, or will add a ".save" suffix to the
-current filename. In multibuffer mode, nano will write all the open buffers to
-the respective emergency files. Nano will \fBnot\fP write this file if a
-previous one exists in the current directory.
+current filename. Nano will \fBnot\fP write this file if a previous one
+exists in the current directory.
 .SH BUGS
 Please send any comments or bug reports to
 .br
@@ -137,8 +115,7 @@ subject of "subscribe".
 .SH HOMEPAGE
 http://www.nano-editor.org
 .SH AUTHOR
-Chris Allegretta <chrisa@asty.org>, et al (see AUTHORS and THANKS for
-details).
+Chris Allegretta <chrisa@asty.org>, et al (see AUTHORS for details).
 This manual page was originally written by Jordi Mallach
 <jordi@sindominio.net>, for the Debian GNU/Linux system (but may be
 used by others).

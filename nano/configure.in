@@ -1,14 +1,13 @@
 # $Id$
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(nano.c)
-AM_INIT_AUTOMAKE(nano, 1.1.5-cvs)
+AM_INIT_AUTOMAKE(nano, 1.0.8)
 AM_CONFIG_HEADER(config.h:config.h.in)
 ALL_LINGUAS="es de fr it id fi hu ca cs gl uk ru sv no nl da pl"
 
 dnl Checks for programs.
 AC_PROG_CC
 AC_ISC_POSIX
-NANO_AC_SYS_LARGEFILE
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -16,7 +15,7 @@ AC_CHECK_HEADERS(fcntl.h unistd.h malloc.h termios.h termio.h limits.h getopt.h 
 
 dnl options
 AC_ARG_ENABLE(tiny,
-[  --enable-tiny           Disable features for the sake of size
+[  --enable-tiny           Disables features for the sake of size
                           (currently disables detailed help and i18n)],
 [if test x$enableval = xyes; then
     AC_DEFINE(NANO_SMALL) tiny_support=yes
@@ -25,52 +24,16 @@ AC_ARG_ENABLE(tiny,
     AC_DEFINE(DISABLE_HELP) 
     AC_DEFINE(DISABLE_JUSTIFY) 
     AC_DEFINE(DISABLE_BROWSER) 
-    AC_DEFINE(DISABLE_MOUSE) 
-    AC_DEFINE(DISABLE_OPERATINGDIR)
  fi])
 
 AC_ARG_ENABLE(extra,
 [  --enable-extra          Enable extra (optional) functions, including easter eggs],
 [if test x$enableval = xyes; then
     AC_DEFINE(NANO_EXTRA) extra_support=yes
-    AC_DEFINE(ENABLE_MULTIBUFFER) multibuffer_support=yes
-    AC_DEFINE(ENABLE_UNDO) undo_support=yes
  fi])
-
-AC_ARG_ENABLE(undo,
-[  --enable-undo           Enable undo support],
-[if test x$enableval = xyes && test x$tiny_support != xyes; then
-    AC_DEFINE(ENABLE_UNDO) undo_support=yes
- fi])
-
-AC_ARG_ENABLE(multibuffer,
-[  --enable-multibuffer    Enable multiple file buffers; this is disabled if --enable-tiny is used],
-[if test x$enableval = xyes && test x$tiny_support != xyes; then
-    AC_DEFINE(ENABLE_MULTIBUFFER) multibuffer_support=yes
- fi])
-
-AC_ARG_ENABLE(nanorc,
-[  --enable-nanorc         Enable use of .nanorc file],
-[if test x$enableval = xyes; then
-    AC_DEFINE(ENABLE_NANORC) nanorc_support=yes
- fi])
-
-AC_ARG_ENABLE(color,
-[  --enable-color          Enable color and syntax highlighting],
-[if test x$enableval = xyes; then
-    AC_DEFINE(ENABLE_NANORC) nanorc_support=yes
-    AC_DEFINE(ENABLE_COLOR) color_support=yes
-    AC_MSG_WARN([
-
-***********************************************************************
-*** WARNING: Color support is currently BROKEN.  Don't expect it to ***
-*** work AT ALL until more is implemented.                          ***
-***********************************************************************
-])
-fi])
 
 AC_ARG_ENABLE(tabcomp,
-[  --disable-tabcomp       Disable tab completion code for a smaller binary],
+[  --disable-tabcomp       Disables tab completion code for a smaller binary],
  [if test x$enableval != xyes; then
     AC_DEFINE(DISABLE_TABCOMP) 
  fi])
@@ -82,39 +45,33 @@ AC_ARG_ENABLE(justify,
  fi])
 
 AC_ARG_ENABLE(speller,
-[  --disable-speller       Disable spell checker function],
+[  --disable-speller       Disables spell checker function],
  [if test x$enableval != xyes; then
     AC_DEFINE(DISABLE_SPELLER) 
  fi])
 
 AC_ARG_ENABLE(help,
-[  --disable-help          Disable help function (^G)],
+[  --disable-help          Disables help function (^G)],
  [if test x$enableval != xyes; then
     AC_DEFINE(DISABLE_HELP) 
  fi])
 
 AC_ARG_ENABLE(browser,
-[  --disable-browser       Disable mini file browser],
+[  --disable-browser       Disables mini file browser],
  [if test x$enableval != xyes; then
     AC_DEFINE(DISABLE_BROWSER)
  fi])
 
 AC_ARG_ENABLE(wrapping,
-[  --disable-wrapping      Disable all wrapping of text (and -w flag)],
+[  --disable-wrapping      Disables all wrapping of text (and -w flag)],
  [if test x$enableval != xyes; then
     AC_DEFINE(DISABLE_WRAPPING)
  fi])
 
-AC_ARG_ENABLE(mouse,
-[  --disable-mouse         Disable mouse support (and -m flag)],
+AC_ARG_ENABLE(wrapping-as-root,
+[  --disable-wrapping-as-root  Disables wrapping of text as root by default],
  [if test x$enableval != xyes; then
-    AC_DEFINE(DISABLE_MOUSE)
- fi])
-
-AC_ARG_ENABLE(operatingdir,
-[  --disable-operatingdir         Disable setting of operating directory (chroot of sorts)],
- [if test x$enableval != xyes; then
-    AC_DEFINE(DISABLE_OPERATINGDIR)
+    AC_DEFINE(DISABLE_ROOTWRAP)
  fi])
 
 AC_MSG_CHECKING([whether to use slang])
@@ -266,7 +223,6 @@ else
 fi
 
 
-AC_CHECK_LIB([$CURSES_LIB_NAME], use_default_colors, [AC_DEFINE(HAVE_USE_DEFAULT_COLORS)])
 if test x$slang_support != xyes; then
     AC_CHECK_LIB([$CURSES_LIB_NAME], wresize, [AC_DEFINE(HAVE_WRESIZE)])
     AC_CHECK_LIB([$CURSES_LIB_NAME], resizeterm, [AC_DEFINE(HAVE_RESIZETERM)])

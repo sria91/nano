@@ -2,7 +2,7 @@
 /**************************************************************************
  *   move.c                                                               *
  *                                                                        *
- *   Copyright (C) 1999-2002 Chris Allegretta                             *
+ *   Copyright (C) 1999 Chris Allegretta                                  *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -34,24 +34,20 @@
 #define _(string) (string)
 #endif
 
-void page_down(void)
+void page_down_center(void)
 {
-    if (!ISSET(SMOOTHSCROLL)) {
-	if (editbot != filebot) {
-	    edit_update(editbot->next, CENTER);
-	    center_cursor();
-	} else {
-	    while (current != filebot)
-		current = current->next;
-	    edit_update(current, CENTER);
-	}
+    if (editbot != filebot) {
+	edit_update(editbot->next, CENTER);
+	center_cursor();
     } else {
-	    edit_update(editbot, NONE);
+	while (current != filebot)
+	    current = current->next;
+	edit_update(current, CENTER);
     }
     update_cursor();
 }
 
-int do_page_down(void)
+int page_down(void)
 {
     wrap_reset();
     current_x = 0;
@@ -128,7 +124,7 @@ int do_down(void)
     if (current_y < editwinrows - 1 && current != editbot)
 	current_y++;
     else
-	page_down();
+	page_down_center();
 
     update_cursor();
     update_line(current->prev, 0);
@@ -138,23 +134,11 @@ int do_down(void)
     return 1;
 }
 
-void page_up(void)
+void page_up_center(void)
 {
     if (edittop != fileage) {
-	if (!ISSET(SMOOTHSCROLL)) {
-	    edit_update(edittop, CENTER);
-	    /* Now that we've updated the edit window, edittop might be
-	       at the top of the file; if so, just move the cursor up one
-	       line and don't center it. */
-	    if (edittop != fileage)
-		center_cursor();
-	    else {
-		current = current->prev;
-		reset_cursor();
-	    }
-	} else {
-	    edit_update(edittop->prev, NONE);
-	}
+	edit_update(edittop, CENTER);
+	center_cursor();
     } else
 	current_y = 0;
 
@@ -162,7 +146,7 @@ void page_up(void)
 
 }
 
-int do_page_up(void)
+int page_up(void)
 {
    int i;
 
@@ -200,7 +184,7 @@ int do_up(void)
     if (current_y > 0)
 	current_y--;
     else
-	page_up();
+	page_up_center();
 
     update_cursor();
     update_line(current->next, 0);
