@@ -1,6 +1,6 @@
 
 	GNU nano - an enhanced clone of the Pico text editor.
-
+                                      
 Overview
 
      The nano project was started because of a few "problems" with the
@@ -38,17 +38,14 @@ Web Page
      
 Mailing List and Bug Reports
 
-	Savannah hosts all the nano-related mailing-lists.
-	+ info-nano@gnu.org is a very low traffic list
+	SourceForge hosts all the nano-related mailing-lists.
+	+ nano-announce@lists.sourceforge.net is a very low traffic list
 	  used to announce new Nano versions or other important information
 	  about the project.
-	+ help-nano@gnu.org is for those seeking to get help without
-	  wanting to hear about the technical details of its
-	  development.
-	+ nano-devel@gnu.org is the list used by the people
+	+ nano-devel@lists.sourceforge.net is the list used by the people
 	  that make Nano and a general development discussion list, with
 	  moderate traffic.
-	To subscribe, send email to nano-<name>-request@gnu.org
+	To subscribe, send email to nano-<name>-request@lists.sourceforge.net
 	with a subject of "subscribe", where <name> is the list you want to
 	subscribe to.
 	For general bug reports, send a description of the problem to
@@ -56,32 +53,10 @@ Mailing List and Bug Reports
 
 Current Status
 
-	This is the 1.1 or unstable branch of nano.  New features
-	will be added and things will be changed around and basically
-	stability is not guaranteed.  If this is not what you're
-	interested in, please use the latest 1.0.x release of nano.
-
-	New features in this branch include:
-	+ .nanorc file support (--enable-nanorc configure option, 
-	  see sample.nanorc file)
-	+ Negative -r value for "#cols from right", allows dynamic adjustment
-	  of wrap margin based on window size.
-	+ Write marked text to separate file (^O after selecting with ^^).
-	+ Append to file (Meta-A at write file menu).
-	+ Multiple file buffers! (--enable-multibuffer configure option,
-	  --multibuffer, -F cmdline flag, Meta-F toggle, then ^R to load).
-	+ Better compatibility with Pico.  Mouse mode now supports clicking
-	  shortcuts and files in browser, search toggles that are Pico 
-	  extensions moved to Meta keys so as to not interfere with Pico
-	  control sequences.
-	+ Smooth scrolling through files, instead of the jerky half-page
-	  down, half-page up method.  This is available by using the 
-	  -S or --smooth switch, or the Meta-S toggle.
-	+ Better non-*nix file support.  GNU nano now automatically
-	  converts files from DOS format or Mac format to standard file
-	  format.  It can also write files in either format by using the
-	  appropriate command line (-D, --dos or -M, --mac) or toggle
-	  (Meta-D, Meta-O).
+	GNU nano has finally reached its first stable release (1.0).
+	The 1.1 development tree has forked and is proceeding nicely.
+	There will be releases and updates for both the 1.1 and
+	1.0 trees until 1.1 stabilizes and becomes version 1.2.
 
    Chris Allegretta (chrisa@asty.org)
 

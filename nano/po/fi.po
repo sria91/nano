@@ -8,9 +8,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: nano 1.1.2pre3\n"
-"POT-Creation-Date: 2002-03-30 11:42-0500\n"
-"PO-Revision-Date: 2001-10-03 20:38+0300\n"
+"Project-Id-Version: nano 1.0.4\n"
+"POT-Creation-Date: 2002-03-26 12:57-0500\n"
+"PO-Revision-Date: 2001-10-03 21:45+0300\n"
 "Last-Translator: Pauli Virtanen <pauli.virtanen@saunalahti.fi>\n"
 "Language-Team: Finnish <fi@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -22,609 +22,408 @@ msgstr ""
 msgid "add_to_cutbuffer called with inptr->data = %s\n"
 msgstr "add_to_cutbuffer funktion parametri inptr->data = %s\n"
 
-#: cut.c:215
+#: cut.c:161
 msgid "Blew away cutbuffer =)\n"
 msgstr "Leiketila katosi =)\n"
 
-#: files.c:166
+#: files.c:124
 msgid "read_line: not on first line and prev is NULL"
 msgstr "read_line: ei ensimmäisellä rivillä ja prev on NULL"
 
-#: files.c:248 files.c:255 files.c:281
+#: files.c:187 files.c:194 files.c:212
 #, c-format
 msgid "Read %d lines"
 msgstr "%d riviä luettu"
 
-#: files.c:276
-#, c-format
-msgid "Read %d lines (Converted from Mac format)"
-msgstr ""
-
-#: files.c:278
-#, c-format
-msgid "Read %d lines (Converted from DOS format)"
-msgstr ""
-
-#: files.c:300 search.c:219
+#: files.c:230 search.c:203
 #, c-format
 msgid "\"%s\" not found"
 msgstr "Ei löytynyt: \"%s\""
 
 #. We have a new file
-#: files.c:304
+#: files.c:234
 msgid "New File"
 msgstr "Uusi tiedosto"
 
-#: files.c:317
+#: files.c:247
 #, c-format
 msgid "File \"%s\" is a directory"
 msgstr "\"%s\" on hakemisto"
 
 #. Don't open character or block files.  Sorry, /dev/sndstat!
-#: files.c:320
+#: files.c:250
 #, c-format
 msgid "File \"%s\" is a device file"
 msgstr "\"%s\" on laitetiedosto"
 
-#: files.c:328
+#: files.c:257
 msgid "Reading File"
 msgstr "Lukee tiedostoa"
 
-#: files.c:380
-#, fuzzy, c-format
-msgid "File to insert [from %s] "
-msgstr "Lisättävä tiedosto [hakemistossa ./]"
-
-#: files.c:384
+#: files.c:271
 msgid "File to insert [from ./] "
 msgstr "Lisättävä tiedosto [hakemistossa ./]"
 
-#: files.c:392 files.c:559 files.c:607 files.c:705 files.c:717 files.c:770
-#: files.c:781 files.c:1499
-#, c-format
-msgid "filename is %s"
-msgstr "tiedoston nimi on %s"
-
-#: files.c:422
-#, c-format
-msgid "Can't insert file from outside of %s"
-msgstr "Ei voi lisätä tiedostoa hakemiston %s ulkopuolelta"
-
-#: files.c:431
-msgid "Command to execute "
-msgstr ""
-
-#: files.c:433 files.c:503 files.c:1208 files.c:1582 nano.c:1895
+#: files.c:318 files.c:343 files.c:575 nano.c:1612
 msgid "Cancelled"
 msgstr "Peruttu"
 
-#: files.c:518
-#, fuzzy
-msgid "Key illegal in non-multibuffer mode"
-msgstr "Virheellinen näppäin katselutilassa"
-
-#: files.c:697 files.c:762
-msgid "No more open files"
-msgstr "Ei muita avoimia tiedostoja"
-
-#: files.c:725 files.c:789
-#, c-format
-msgid "Switched to %s"
-msgstr ""
-
-#: files.c:1231
-#, c-format
-msgid "Can't write outside of %s"
-msgstr "Ei voi kirjoittaa hakemiston %s ulkopuolelle"
-
-#: files.c:1268 files.c:1284 files.c:1298 files.c:1321 files.c:1330
-#: files.c:1342
+#: files.c:389 files.c:405 files.c:419 files.c:436 files.c:442
 #, c-format
 msgid "Could not open file for writing: %s"
 msgstr "Tiedostoa ei voitu avata luettavaksi: %s"
 
-#: files.c:1303
+#: files.c:424
 #, c-format
 msgid "Wrote >%s\n"
 msgstr "Kirjoitettu: >%s\n"
 
-#: files.c:1352
+#: files.c:451
 #, c-format
 msgid "Could not close %s: %s"
 msgstr "Tiedostoa %s ei voitu sulkea: %s"
 
 #. Try a rename??
-#: files.c:1375 files.c:1384 files.c:1389
+#: files.c:474 files.c:483 files.c:488
 #, c-format
 msgid "Could not open %s for writing: %s"
 msgstr "Tiedostoa %s ei voitu avata kirjoittamista varten: %s"
 
-#: files.c:1396
+#: files.c:495
 #, c-format
 msgid "Could not set permissions %o on %s: %s"
 msgstr "Oikeuksia %o ei voitu asettaa tiedostolle %s: %s"
 
-#: files.c:1403
+#: files.c:500
 #, c-format
 msgid "Wrote %d lines"
 msgstr "%d riviä kirjoitettu"
 
-#: files.c:1444
-msgid " [Mac Format]"
-msgstr ""
-
-#: files.c:1446
-msgid " [DOS Format]"
-msgstr ""
-
-#: files.c:1454
-msgid "Append Selection to File"
-msgstr "Lisää valinta tiedostoon"
-
-#: files.c:1457
-msgid "Write Selection to File"
-msgstr "Kirjoita valinta tiedostoon"
-
-#: files.c:1463
-msgid "File Name to Append"
-msgstr "Lisättävä tiedosto"
-
-#: files.c:1466
-msgid "File Name to Write"
+#: files.c:533
+msgid "File Name to write"
 msgstr "Kirjoitettava tiedosto"
 
-#: files.c:1513
+#: files.c:550
+#, c-format
+msgid "filename is %s"
+msgstr "tiedoston nimi on %s"
+
+#: files.c:564
 msgid "File exists, OVERWRITE ?"
 msgstr "Tiedosto olemassa, korvataanko?"
 
-#: files.c:2033
+#: files.c:986
 msgid "(more)"
 msgstr "(lisää)"
 
-#: files.c:2355
+#: files.c:1255
 msgid "Can't move up a directory"
 msgstr "Ei voi siirtyä ylähakemistoon"
 
-#: files.c:2367
-msgid "Can't visit parent in restricted mode"
-msgstr "Ei voi siirtyä ylähakemistoon rajoitetussa tilassa"
-
 #. We can't open this dir for some reason.  Complain
-#: files.c:2389 files.c:2448
+#: files.c:1274
 #, c-format
 msgid "Can't open \"%s\": %s"
 msgstr "Hakemistoa \"%s\" ei voi avata: %s"
 
-#: files.c:2419 global.c:327
-msgid "Goto Directory"
-msgstr "Siirry hakemistoon"
-
-#: files.c:2426
-#, c-format
-msgid "Can't go outside of %s in restricted mode"
-msgstr "Ei voi siirtyä pois hakemistosta %s rajoitetussa tilassa"
-
-#: files.c:2433
-msgid "Goto Cancelled"
-msgstr "Siirtyminen peruttu"
-
-#: global.c:211
+#: global.c:132
 msgid "Constant cursor position"
 msgstr "Näytä kohdistimen sijainti aina"
 
-#: global.c:212
+#: global.c:133
 msgid "Auto indent"
 msgstr "Automaattinen sisennys"
 
-#: global.c:213
+#: global.c:134
 msgid "Suspend"
 msgstr "Keskeytä"
 
-#: global.c:214
+#: global.c:135
 msgid "Help mode"
 msgstr "Ohjetila"
 
-#: global.c:215
+#: global.c:136
 msgid "Pico mode"
 msgstr "Pico-tila"
 
-#: global.c:216
+#: global.c:137
 msgid "Mouse support"
 msgstr "Hiirituki"
 
-#: global.c:217
+#: global.c:138
 msgid "Cut to end"
 msgstr "Leikkaa loppuun saakka"
 
-#: global.c:218
-msgid "Backwards search"
-msgstr "Taaksepäin etsintä"
-
-#: global.c:219
-msgid "Case sensitive search"
-msgstr "Kirjainkokotarkka etsintä"
-
-#: global.c:222
-#, fuzzy
-msgid "Regular expression search"
+#: global.c:140
+msgid "Regular expressions"
 msgstr "Säännölliset lausekkeet"
 
-#: global.c:225
-msgid "No conversion from DOS/Mac format"
-msgstr ""
-
-#: global.c:226
-msgid "Writing file in DOS format"
-msgstr "Kirjoittaa tiedoston DOS-muodoss"
-
-#: global.c:227
-msgid "Writing file in Mac format"
-msgstr "Kirjoittaa tiedoston Mac-muodossa"
-
-#: global.c:228 nano.c:463
-msgid "Smooth scrolling"
-msgstr "Pehmeä vieritys"
-
-#: global.c:229
+#: global.c:142
 msgid "Auto wrap"
 msgstr "Automaattinen rivitys"
 
-#: global.c:232
-msgid "Multiple file buffers"
-msgstr "Useat puskurit"
-
-#: global.c:287
+#: global.c:186
 msgid "Invoke the help menu"
 msgstr "Avaa ohjevalikko"
 
-#: global.c:288
+#: global.c:187
 msgid "Write the current file to disk"
 msgstr "Kirjoita nykyinen tiedosto levylle"
 
-#: global.c:291
-msgid "Close currently loaded file/Exit from nano"
-msgstr "Sulje nykyinen ladattu tiedosto/Poistu Nanosta"
-
-#: global.c:293
+#: global.c:188
 msgid "Exit from nano"
 msgstr "Poistu Nanosta"
 
-#: global.c:296
+#: global.c:189
 msgid "Goto a specific line number"
 msgstr "Siirry tietylle riville"
 
-#: global.c:297
+#: global.c:190
 msgid "Justify the current paragraph"
 msgstr "Tasaa nykyinen kappale"
 
-#: global.c:298
+#: global.c:191
 msgid "Unjustify after a justify"
 msgstr "Poista tasaus tasauksen jälkeen"
 
-#: global.c:299
+#: global.c:192
 msgid "Replace text within the editor"
 msgstr "Etsi ja korvaa tekstiä"
 
-#: global.c:300
+#: global.c:193
 msgid "Insert another file into the current one"
 msgstr "Lisää toinen tiedosto nykyiseen tiedostoon"
 
-#: global.c:301
+#: global.c:194
 msgid "Search for text within the editor"
 msgstr "Etsi tekstiä"
 
-#: global.c:302
+#: global.c:195
 msgid "Move to the previous screen"
 msgstr "Siirry edelliseen ruutuun"
 
-#: global.c:303
+#: global.c:196
 msgid "Move to the next screen"
 msgstr "Siirry seuraavaan ruutuun"
 
-#: global.c:304
+#: global.c:197
 msgid "Cut the current line and store it in the cutbuffer"
 msgstr "Leikkaa nykyinen rivi leiketilaan"
 
-#: global.c:305
+#: global.c:198
 msgid "Uncut from the cutbuffer into the current line"
 msgstr "Kopioi rivi leiketilasta nykyiselle riville"
 
-#: global.c:306
+#: global.c:199
 msgid "Show the position of the cursor"
 msgstr "Näytä kohdistimen sijainti"
 
-#: global.c:307
+#: global.c:200
 msgid "Invoke the spell checker (if available)"
 msgstr "Käynnistä oikoluin (jos saatavilla)"
 
-#: global.c:308
+#: global.c:201
 msgid "Move up one line"
 msgstr "Siirry yksi rivi ylöspäin"
 
-#: global.c:309
+#: global.c:202
 msgid "Move down one line"
 msgstr "Siirry yksi rivi alaspäin"
 
-#: global.c:310
+#: global.c:203
 msgid "Move forward one character"
 msgstr "Siirry yksi merkki eteenpäin"
 
-#: global.c:311
+#: global.c:204
 msgid "Move back one character"
 msgstr "Siirry yksi merkki taaksepäin"
 
-#: global.c:312
+#: global.c:205
 msgid "Move to the beginning of the current line"
 msgstr "Siirry nykyisen rivin alkuun"
 
-#: global.c:313
+#: global.c:206
 msgid "Move to the end of the current line"
 msgstr "Siirry nykyisen rivin loppuun"
 
-#: global.c:314
+#: global.c:207
 msgid "Go to the first line of the file"
 msgstr "Siirry tiedoston ensimmäiselle riville"
 
-#: global.c:315
+#: global.c:208
 msgid "Go to the last line of the file"
 msgstr "Siirry tiedoston viimeiselle riville"
 
-#: global.c:316
+#: global.c:209
 msgid "Refresh (redraw) the current screen"
 msgstr "Piirrä ruutu uudestaan"
 
-#: global.c:317
+#: global.c:210
 msgid "Mark text at the current cursor location"
 msgstr "Merkitse kohdistimen kohdalla oleva teksti"
 
-#: global.c:318
+#: global.c:211
 msgid "Delete the character under the cursor"
 msgstr "Poista kohdistimen kohdalla oleva merkki"
 
-#: global.c:320
+#: global.c:213
 msgid "Delete the character to the left of the cursor"
 msgstr "Poista kohdistimesta vasemmalle oleva merkki"
 
-#: global.c:321
+#: global.c:214
 msgid "Insert a tab character"
 msgstr "Lisää sarkainmerkki"
 
-#: global.c:322
+#: global.c:215
 msgid "Insert a carriage return at the cursor position"
 msgstr "Lisää rivinvaihto kohdistimen kohdalle"
 
-#: global.c:324
+#: global.c:217
 msgid "Make the current search or replace case (in)sensitive"
 msgstr "Muuta etsintä- tai korvaustoiminnon kirjainkoosta piittaamista."
 
-#: global.c:325
+#: global.c:218
 msgid "Go to file browser"
 msgstr "Siirry tiedostoselaimeen"
 
-#: global.c:326
-msgid "Execute external command"
-msgstr ""
-
-#: global.c:328
+#: global.c:219
 msgid "Cancel the current function"
 msgstr "Peru nykyinen toiminto."
 
-#: global.c:329
-msgid "Append to the current file"
-msgstr "Lisää nykyiseen tiedostoon"
-
-#: global.c:330
-msgid "Search backwards"
-msgstr "Etsi taaksepäin"
-
-#: global.c:331
-#, fuzzy
-msgid "Write file out in DOS format"
-msgstr "Kirjoittaa tiedoston DOS-muodoss"
-
-#: global.c:332
-#, fuzzy
-msgid "Write file out in Mac format"
-msgstr "Kirjoittaa tiedoston Mac-muodossa"
-
-#: global.c:334
-msgid "Use Regular expressions"
-msgstr "Käytä säännöllisiä lausekkeita"
-
-#: global.c:335
-msgid "Find other bracket"
-msgstr "Etsi toinen sulje"
-
-#: global.c:338
-msgid "Open previously loaded file"
-msgstr "Avaa viimeksi ladattu tiedosto"
-
-#: global.c:339
-msgid "Open next loaded file"
-msgstr "Avaa seuraava ladattu tiedosto"
-
-#: global.c:346 global.c:499 global.c:534 global.c:569 global.c:584
-#: global.c:613 global.c:639 global.c:654 global.c:661 global.c:673
-#: global.c:694
+#: global.c:222
 msgid "Get Help"
 msgstr "Ohjeita"
 
-#: global.c:351
-msgid "Close"
-msgstr "Sulje"
-
-#: global.c:355 global.c:606 global.c:675
+#: global.c:225 global.c:406 global.c:430
 msgid "Exit"
 msgstr "Lopeta"
 
-#: global.c:358
+#: global.c:228
 msgid "WriteOut"
 msgstr "Kirjoita"
 
-#: global.c:363 global.c:468
+#: global.c:233 global.c:322
 msgid "Justify"
 msgstr "Tasaa"
 
-#. this is so we can view multiple files
-#: global.c:370 global.c:374 global.c:383 global.c:387
+#: global.c:237 global.c:243
 msgid "Read File"
 msgstr "Lue tied."
 
-#: global.c:393 global.c:464 global.c:510
+#: global.c:247 global.c:318 global.c:346
 msgid "Replace"
 msgstr "Korvaa"
 
-#: global.c:397
+#: global.c:251
 msgid "Where Is"
 msgstr "Etsi"
 
-#: global.c:401 global.c:598 global.c:678
+#: global.c:255 global.c:398 global.c:422
 msgid "Prev Page"
 msgstr "Ed. sivu"
 
-#: global.c:405 global.c:602 global.c:682
+#: global.c:259 global.c:402 global.c:426
 msgid "Next Page"
 msgstr "Seur. sivu"
 
-#: global.c:409
+#: global.c:263
 msgid "Cut Text"
 msgstr "Leikkaa"
 
-#: global.c:413
+#: global.c:267
 msgid "UnJustify"
 msgstr "Poista tasaus"
 
-#: global.c:416
+#: global.c:270
 msgid "UnCut Txt"
 msgstr "Liitä"
 
-#: global.c:420
+#: global.c:274
 msgid "Cur Pos"
 msgstr "Sijainti"
 
-#: global.c:424
+#: global.c:278
 msgid "To Spell"
 msgstr "Oikolue"
 
-#: global.c:428
+#: global.c:282
 msgid "Up"
 msgstr "Ylös"
 
-#: global.c:431
+#: global.c:285
 msgid "Down"
 msgstr "Alas"
 
-#: global.c:434
+#: global.c:288
 msgid "Forward"
 msgstr "Eteenpäin"
 
-#: global.c:437
+#: global.c:291
 msgid "Back"
 msgstr "Takaisin"
 
-#: global.c:440
+#: global.c:294
 msgid "Home"
 msgstr "Home"
 
-#: global.c:443
+#: global.c:297
 msgid "End"
 msgstr "End"
 
-#: global.c:446
+#: global.c:300
 msgid "Refresh"
 msgstr "Piirrä uudelleen"
 
-#: global.c:449
+#: global.c:303
 msgid "Mark Text"
 msgstr "Merkitse tekstiä"
 
-#: global.c:452
+#: global.c:306
 msgid "Delete"
 msgstr "Poista"
 
-#: global.c:456
+#: global.c:310
 msgid "Backspace"
 msgstr "Askelpalautin"
 
-#: global.c:460
+#: global.c:314
 msgid "Tab"
 msgstr "Sarkain"
 
-#: global.c:472
+#: global.c:326
 msgid "Enter"
 msgstr "Enter"
 
-#: global.c:476 global.c:514 global.c:549
+#: global.c:330 global.c:350 global.c:370
 msgid "Goto Line"
 msgstr "Siirry"
 
-#: global.c:481
-msgid "Find Other Bracket"
-msgstr "Etsi toinen sulje"
-
-#: global.c:487
-msgid "Previous File"
-msgstr ""
-
-#: global.c:490
-#, fuzzy
-msgid "Next File"
-msgstr "Uusi tiedosto"
-
-#: global.c:502 global.c:537 global.c:572 global.c:586 global.c:633
-#: global.c:641 global.c:656 global.c:663 global.c:696 winio.c:1422
-msgid "Cancel"
-msgstr "Peru"
-
-#: global.c:504 global.c:539 global.c:574 global.c:589
+#: global.c:336 global.c:357 global.c:378 global.c:388
 msgid "First Line"
 msgstr "1. rivi"
 
-#: global.c:507 global.c:542 global.c:577 global.c:592
+#: global.c:339 global.c:360 global.c:381 global.c:391
 msgid "Last Line"
 msgstr "Viim. rivi"
 
-#: global.c:518 global.c:553
+#: global.c:342 global.c:363
 msgid "Case Sens"
 msgstr "Kirj. koko"
 
-#: global.c:521 global.c:556
-msgid "Direction"
-msgstr "Suunta"
+#: global.c:353 global.c:373 global.c:384 global.c:394 global.c:415
+#: global.c:418 winio.c:1056
+msgid "Cancel"
+msgstr "Peru"
 
-#: global.c:526 global.c:561
-msgid "Regexp"
-msgstr "Säännöke"
-
-#: global.c:545
+#: global.c:366
 msgid "No Replace"
 msgstr "Älä korvaa"
 
-#: global.c:616 global.c:645
+#: global.c:411
 msgid "To Files"
 msgstr "Tiedosto"
 
-#: global.c:622
-msgid "DOS Format"
-msgstr ""
-
-#: global.c:625
-msgid "Mac Format"
-msgstr ""
-
-#: global.c:629
-msgid "Append"
-msgstr "Lisää"
-
-#: global.c:649
-msgid "Execute Command"
-msgstr ""
-
-#: global.c:686
-msgid "Goto"
-msgstr "Siirry"
-
-#: nano.c:186
+#: nano.c:141
 #, c-format
 msgid ""
 "\n"
@@ -633,24 +432,24 @@ msgstr ""
 "\n"
 "Teksti kirjoitettu tiedostoon \"%s\"\n"
 
-#: nano.c:188
-#, fuzzy, c-format
+#: nano.c:143
+#, c-format
 msgid ""
 "\n"
-"No %s written (too many backup files?)\n"
+"No %s written (file exists?)\n"
 msgstr ""
 "\n"
 "Tiedostoa %s ei saatu kirjoitettua (onko se jo olemassa?)\n"
 
-#: nano.c:197
+#: nano.c:152
 msgid "Window size is too small for Nano..."
 msgstr "Ikkuna on liian pieni Nanolle..."
 
-#: nano.c:205
+#: nano.c:160
 msgid "Key illegal in VIEW mode"
 msgstr "Virheellinen näppäin katselutilassa"
 
-#: nano.c:257
+#: nano.c:204
 msgid ""
 " nano help text\n"
 "\n"
@@ -686,25 +485,102 @@ msgstr ""
 "sulkeissa:\n"
 "\n"
 
-#: nano.c:356
+#: nano.c:298
 msgid "delete_node(): free'd a node, YAY!\n"
 msgstr "delete_node(): solmu vapautettu, YAY!\n"
 
-#: nano.c:361
+#: nano.c:303
 msgid "delete_node(): free'd last node.\n"
 msgstr "delete_node(): viimeinen solmu vapautettu.\n"
 
-#: nano.c:441
+#: nano.c:360
 msgid ""
 "Usage: nano [GNU long option] [option] +LINE <file>\n"
 "\n"
 msgstr "Käyttö: nano [GNU pitkät valitsimet] [valitsimet] +RIVI <tiedosto>\n"
 
-#: nano.c:442
+#: nano.c:361
 msgid "Option\t\tLong option\t\tMeaning\n"
 msgstr "Valitsin\tPitkä valitsin\t\tMerkitys\n"
 
-#: nano.c:444
+#: nano.c:363
+msgid " -T [num]\t--tabsize=[num]\t\tSet width of a tab to num\n"
+msgstr " -T [luku]\t--tabsize=[luku]\tAseta sarkaimen leveys\n"
+
+#: nano.c:366
+msgid " -R\t\t--regexp\t\tUse regular expressions for search\n"
+msgstr " -R\t\t--regexp\t\tEtsi säännöllisillä lausekkeilla\n"
+
+#: nano.c:370
+msgid " -V \t\t--version\t\tPrint version information and exit\n"
+msgstr " -V \t\t--version\t\tTulosta versiotiedot ja lopeta\n"
+
+#: nano.c:372
+msgid " -c \t\t--const\t\t\tConstantly show cursor position\n"
+msgstr " -c \t\t--const\t\t\tNäytä kohdistimen sijainti jatkuvasti\n"
+
+#: nano.c:374
+msgid " -h \t\t--help\t\t\tShow this message\n"
+msgstr " -h \t\t--help\t\t\tNäytä tämä ohje\n"
+
+#: nano.c:376
+msgid " -i \t\t--autoindent\t\tAutomatically indent new lines\n"
+msgstr " -i \t\t--autoindent\t\tSisennä uudet rivit automaattisesti\n"
+
+#: nano.c:379
+msgid " -k \t\t--cut\t\t\tLet ^K cut from cursor to end of line\n"
+msgstr " -k \t\t--cut\t\t\t^K leikkaa rivin loppuun saakka\n"
+
+#: nano.c:382
+msgid " -l \t\t--nofollow\t\tDon't follow symbolic links, overwrite\n"
+msgstr ""
+" -l \t\t--nofollow\t\tÄlä seuraa symbolisia linkkejä, vaan\n"
+"\t\t\t\t\tkorvaa ne tiedostoilla.\n"
+
+#: nano.c:385
+msgid " -m \t\t--mouse\t\t\tEnable mouse\n"
+msgstr " -m \t\t--mouse\t\t\tKäytä hiirtä\n"
+
+#: nano.c:389
+msgid " -p\t \t--pico\t\t\tEmulate Pico as closely as possible\n"
+msgstr " -p \t\t--pico\t\t       Jäljittele Picoa mahdollisimman tarkasti\n"
+
+#: nano.c:392
+msgid ""
+" -r [#cols] \t--fill=[#cols]\t\tSet fill cols to (wrap lines at) #cols\n"
+msgstr " -r [#lkm] \t--fill=[#lkm]\t\tRivitä annettua pidemmät rivit\n"
+
+#: nano.c:395
+msgid " -s [prog] \t--speller=[prog]\tEnable alternate speller\n"
+msgstr " -s [ohjelma] \t--speller=[ohjelma]\tKäytä annettua oikolukuohjelmaa\n"
+
+#: nano.c:398
+msgid " -t \t\t--tempfile\t\tAuto save on exit, don't prompt\n"
+msgstr ""
+" -t \t\t--tempfile\t\tTallenna tiedosto kysymättä\n"
+"\t\t\t\t\tpoistuttaessa \n"
+
+#: nano.c:400
+msgid " -v \t\t--view\t\t\tView (read only) mode\n"
+msgstr " -v \t\t--view\t\t\tKatselutila (vain luku)\n"
+
+#: nano.c:403
+msgid " -w \t\t--nowrap\t\tDon't wrap long lines\n"
+msgstr " -w \t\t--nowrap\t\tÄlä rivitä pitkiä rivejä\n"
+
+#: nano.c:406
+msgid " -x \t\t--nohelp\t\tDon't show help window\n"
+msgstr " -x \t\t--nohelp\t\tÄlä näytä ohjeikkunaa\n"
+
+#: nano.c:408
+msgid " -z \t\t--suspend\t\tEnable suspend\n"
+msgstr " -z \t\t--suspend\t\tMahdollista keskeyttäminen\n"
+
+#: nano.c:410
+msgid " +LINE\t\t\t\t\tStart at line number LINE\n"
+msgstr " +RIVI\t\t\t\t\tSiirry riville RIVI\n"
+
+#: nano.c:412
 msgid ""
 "Usage: nano [option] +LINE <file>\n"
 "\n"
@@ -712,183 +588,93 @@ msgstr ""
 "Käyttö: nano [asetukset] +RIVI <tiedosto>\n"
 "\n"
 
-#: nano.c:445
+#: nano.c:413
 msgid "Option\t\tMeaning\n"
 msgstr "Asetus\t\tMerkitys\n"
 
-#: nano.c:449
-#, fuzzy
-msgid "Write file in DOS format"
-msgstr "Kirjoittaa tiedoston DOS-muodoss"
-
-#: nano.c:452
-#, fuzzy
-msgid "Enable multiple file buffers"
-msgstr " -F \t\tMahdollista useiden puskureiden käyttö\n"
-
-#: nano.c:454
-msgid "Use alternate keypad routines"
-msgstr ""
-
-#: nano.c:456
-#, fuzzy
-msgid "Write file in Mac format"
-msgstr "Kirjoittaa tiedoston Mac-muodossa"
-
-#: nano.c:457
-#, fuzzy
-msgid "Don't convert files from DOS/Mac format"
-msgstr " -D \t\t--dos\t\t\tKirjoita tiedosto DOS-muodossa\n"
-
-#: nano.c:460
-msgid "-Q [str]"
-msgstr ""
-
-#: nano.c:460
-msgid "--quotestr [str]"
-msgstr ""
-
-#: nano.c:460
-msgid "Quoting string, default \"> \""
-msgstr ""
-
-#: nano.c:465
-msgid "-T [num]"
-msgstr ""
-
-#: nano.c:465
-msgid "--tabsize=[num]"
-msgstr ""
-
-#: nano.c:465
-#, fuzzy
-msgid "Set width of a tab to num"
+#: nano.c:414
+msgid " -T [num]\tSet width of a tab to num\n"
 msgstr " -T [leveys]\tAseta sarkaimen leveys\n"
 
-#: nano.c:466
-#, fuzzy
-msgid "Print version information and exit"
+#: nano.c:415
+msgid " -R\t\tUse regular expressions for search\n"
+msgstr " -R\t\tEtsi säännöllisillä lausekkeilla\n"
+
+#: nano.c:416
+msgid " -V \t\tPrint version information and exit\n"
 msgstr " -V \t\tTulosta versiotiedot ja lopeta\n"
 
-#: nano.c:467
-#, fuzzy
-msgid "Constantly show cursor position"
+#: nano.c:417
+msgid " -c \t\tConstantly show cursor position\n"
 msgstr " -c \t\tNäytä kohdistimen sijainti jatkuvasti\n"
 
-#: nano.c:468
-#, fuzzy
-msgid "Show this message"
+#: nano.c:418
+msgid " -h \t\tShow this message\n"
 msgstr " -h \t\tNäytä tämä ohje\n"
 
-#: nano.c:470
-#, fuzzy
-msgid "Automatically indent new lines"
+#: nano.c:419
+msgid " -i \t\tAutomatically indent new lines\n"
 msgstr " -i \t\tSisennä uudet rivit automaattisesti\n"
 
-#: nano.c:471
-#, fuzzy
-msgid "Let ^K cut from cursor to end of line"
+#: nano.c:421
+msgid " -k \t\tLet ^K cut from cursor to end of line\n"
 msgstr " -k \t\t^K leikkaa rivin loppuun saakka\n"
 
-#: nano.c:473
-#, fuzzy
-msgid "Don't follow symbolic links, overwrite"
+#: nano.c:424
+msgid " -l \t\tDon't follow symbolic links, overwrite\n"
 msgstr " -l \t\tÄlä seuraa symbolisia linkkejä, vaan korvaa ne tiedostoilla.\n"
 
-#: nano.c:476
-#, fuzzy
-msgid "Enable mouse"
+#: nano.c:427
+msgid " -m \t\tEnable mouse\n"
 msgstr " -m \t\tKäytä hiirtä\n"
 
-#: nano.c:480
-msgid "-o [dir]"
-msgstr ""
-
-#: nano.c:480
-msgid "--operatingdir=[dir]"
-msgstr ""
-
-#: nano.c:480
-#, fuzzy
-msgid "Set operating directory"
-msgstr " -o [dir] \tAseta toimintahakemisto\n"
-
-#: nano.c:482
-#, fuzzy
-msgid "Emulate Pico as closely as possible"
+#: nano.c:430
+msgid " -p \t\tEmulate Pico as closely as possible\n"
 msgstr " -p \t\tJäljittele Picoa mahdollisimman tarkasti\n"
 
-#: nano.c:485
-msgid "-r [#cols]"
-msgstr ""
-
-#: nano.c:485
-msgid "--fill=[#cols]"
-msgstr ""
-
-#: nano.c:485
-#, fuzzy
-msgid "Set fill cols to (wrap lines at) #cols"
+#: nano.c:431
+msgid " -r [#cols] \tSet fill cols to (wrap lines at) #cols\n"
 msgstr " -r [#lkm] \tRivitä annettua pidemmät rivit\n"
 
-#: nano.c:488
-msgid "-s [prog]"
-msgstr ""
-
-#: nano.c:488
-msgid "--speller=[prog]"
-msgstr ""
-
-#: nano.c:488
-#, fuzzy
-msgid "Enable alternate speller"
+#: nano.c:433
+msgid " -s [prog]  \tEnable alternate speller\n"
 msgstr " -s [ohjelma]  \tKäytä annettua oikolukuohjelmaa\n"
 
-#: nano.c:490
-#, fuzzy
-msgid "Auto save on exit, don't prompt"
+#: nano.c:435
+msgid " -t \t\tAuto save on exit, don't prompt\n"
 msgstr " -t \t\tTallenna tiedosto kysymättä poistuttaessa\n"
 
-#: nano.c:491
-#, fuzzy
-msgid "View (read only) mode"
+#: nano.c:436
+msgid " -v \t\tView (read only) mode\n"
 msgstr " -v \t\tKatselutila (vain luku)\n"
 
-#: nano.c:493
-#, fuzzy
-msgid "Don't wrap long lines"
+#: nano.c:438
+msgid " -w \t\tDon't wrap long lines\n"
 msgstr " -w \t\tÄlä rivitä pitkiä rivejä\n"
 
-#: nano.c:495
-#, fuzzy
-msgid "Don't show help window"
+#: nano.c:440
+msgid " -x \t\tDon't show help window\n"
 msgstr " -x \t\tÄlä näytä ohjeikkunaa\n"
 
-#: nano.c:496
-#, fuzzy
-msgid "Enable suspend"
+#: nano.c:441
+msgid " -z \t\tEnable suspend\n"
 msgstr " -z \t\tMahdollista keskeyttäminen\n"
 
-#: nano.c:497
-msgid "+LINE"
-msgstr ""
-
-#: nano.c:497
-#, fuzzy
-msgid "Start at line number LINE"
+#: nano.c:442
+msgid " +LINE\t\tStart at line number LINE\n"
 msgstr " +RIVI\t\tSiirry riville RIVI\n"
 
-#: nano.c:504
+#: nano.c:449
 #, c-format
 msgid " GNU nano version %s (compiled %s, %s)\n"
 msgstr " GNU Nano, versio %s. (käännetty %s, %s)\n"
 
-#: nano.c:507
+#: nano.c:452
 msgid " Email: nano@nano-editor.org\tWeb: http://www.nano-editor.org"
 msgstr ""
 " Sähköposti: nano@nano-editor.org\tInternet: http://www.nano-editor.org"
 
-#: nano.c:508
+#: nano.c:453
 msgid ""
 "\n"
 " Compiled options:"
@@ -896,682 +682,351 @@ msgstr ""
 "\n"
 " Mukaan käännetyt valitsimet:"
 
-#: nano.c:595
+#: nano.c:524
 msgid "Mark Set"
 msgstr "Merkintä alkoi"
 
-#: nano.c:600
+#: nano.c:529
 msgid "Mark UNset"
 msgstr "Merkintä loppui"
 
-#: nano.c:1225
+#: nano.c:1103
 #, c-format
 msgid "check_wrap called with inptr->data=\"%s\"\n"
 msgstr "check_wrap -funktion parametri inptr->data=\"%s\"\n"
 
-#: nano.c:1277
+#: nano.c:1155
 #, c-format
 msgid "current->data now = \"%s\"\n"
 msgstr "current->data nyt = \"%s\"\n"
 
-#: nano.c:1329
+#: nano.c:1207
 #, c-format
 msgid "After, data = \"%s\"\n"
 msgstr "Jälkeenpäin, data = \"%s\"\n"
 
-#. allow replace word to be corrected
-#: nano.c:1448
+#: nano.c:1315
 msgid "Edit a replacement"
 msgstr "Muokkaa korvausta"
 
-#: nano.c:1700
+#: nano.c:1559
 #, c-format
 msgid "Could not create a temporary filename: %s"
 msgstr "Väliaikaista tiedostonnimeä ei voitu luoda: %s"
 
-#: nano.c:1706
+#: nano.c:1565
 msgid "Spell checking failed: unable to write temp file!"
 msgstr "Oikaisuluku epäonnistui: väliaikaistiedostoa ei voitu kirjoittaa"
 
-#: nano.c:1726
+#: nano.c:1577
 msgid "Finished checking spelling"
 msgstr "Oikoluku on valmis"
 
-#: nano.c:1728
+#: nano.c:1579
 msgid "Spell checking failed"
 msgstr "Oikaisuluku epäonnistui"
 
-#: nano.c:1764
-#, fuzzy
-msgid "Could not pipe"
-msgstr "Tiedostoa %s ei voitu sulkea: %s"
-
-#: nano.c:1786
-#, fuzzy
-msgid "Could not fork"
-msgstr "Tiedostoa %s ei voitu sulkea: %s"
-
-#: nano.c:1863
+#: nano.c:1599
 msgid "Save modified buffer (ANSWERING \"No\" WILL DESTROY CHANGES) ? "
 msgstr "Tallenna muutettu teksti (Muutokset häviävät, jos vastaat \"ei\") ? "
 
-#: nano.c:2018
+#: nano.c:1695
 msgid "Received SIGHUP"
 msgstr "Vastaanotettiin SIGHUP"
 
-#: nano.c:2088
+#: nano.c:1763
 msgid "Cannot resize top win"
 msgstr "Yläikkunan kokoa ei voi muuttaa"
 
-#: nano.c:2090
+#: nano.c:1765
 msgid "Cannot move top win"
 msgstr "Yläikkunaa ei voi siirtää"
 
-#: nano.c:2092
+#: nano.c:1767
 msgid "Cannot resize edit win"
 msgstr "Muokkausikkunan kokoa ei voi muuttaa"
 
-#: nano.c:2094
+#: nano.c:1769
 msgid "Cannot move edit win"
 msgstr "Muokkausikkunaa ei voi siirtää"
 
-#: nano.c:2096
+#: nano.c:1771
 msgid "Cannot resize bottom win"
 msgstr "Alaikkunan kokoa ei voi muuttaa"
 
-#: nano.c:2098
+#: nano.c:1773
 msgid "Cannot move bottom win"
 msgstr "Alaikkunaa ei voi siirtää"
 
-#: nano.c:2476
+#: nano.c:2111
 msgid "Can now UnJustify!"
 msgstr "Tasaamisen voi perua nyt."
 
-#: nano.c:2541
-msgid ""
-"Search Command Help Text\n"
-"\n"
-" Enter the words or characters you would like to search for, then hit "
-"enter.  If there is a match for the text you entered, the screen will be "
-"updated to the location of the nearest match for the search string.\n"
-"\n"
-" If using Pico Mode via the -p or --pico flags, using the Meta-P toggle or "
-"using a nanorc file, the previous search string will be shown in brackets "
-"after the Search: prompt.  Hitting enter without entering any text will "
-"perform the previous search. Otherwise, the previous string will be placed "
-"in front of the cursor, and can be edited or deleted before hitting enter.\n"
-"\n"
-" The following functions keys are available in Search mode:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2555
-msgid ""
-"Goto Line Help Text\n"
-"\n"
-" Enter the line number that you wish to go to and hit Enter.  If there are "
-"fewer lines of text than the number you entered, you will be brought to the "
-"last line of the file.\n"
-"\n"
-" The following functions keys are available in Goto Line mode:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2562
-msgid ""
-"Insert File Help Text\n"
-"\n"
-" Type in the name of a file to be inserted into the current file buffer at "
-"the current cursor location.\n"
-"\n"
-" If you have compiled nano with multiple file buffer support, and enable "
-"multiple buffers with the -F or --multibuffer command line flags, the Meta-F "
-"toggle or using a nanorc file, inserting a file will cause it to be loaded "
-"into a separate buffer (use Meta-< and > to switch between file buffers).\n"
-"\n"
-" If you need another blank buffer, do not enter any filename, or type in a "
-"nonexistent filename at the prompt and press Enter.\n"
-"\n"
-" The following function keys are available in Insert File mode:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2576
-msgid ""
-"Write File Help Text\n"
-"\n"
-" Type the name that you wish to save the current file as and hit enter to "
-"save the file.\n"
-"\n"
-" If you are using the marker code with Ctrl-^ and have selected text, you "
-"will be prompted to save only the selected portion to a separate file.  To "
-"reduce the chance of overwriting the current file with just a portion of it, "
-"the current filename is not the default in this mode.\n"
-"\n"
-" The following function keys are available in Write File mode:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2588
-msgid ""
-"File Browser Help Text\n"
-"\n"
-" The file browser is used to visually browse the directory structure to "
-"select a file for reading or writing.  You may use the arrow keys or Page Up/"
-"Down to browse through the files, and S or Enter to choose the selected file "
-"or enter the selected directory. To move up one level, select the directory "
-"called \"..\" at the top of the file list.\n"
-"\n"
-" The following functions keys are available in the file browser:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2599
-msgid ""
-"Browser Goto Directory Help Text\n"
-"\n"
-" Enter the name of the directory you would like to browse to.\n"
-"\n"
-" If tab completion has not been disabled, you can use the TAB key to "
-"(attempt to) automatically complete the directory name.\n"
-"\n"
-"  The following function keys are available in Browser GotoDir mode:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2607
-msgid ""
-"Spell Check Help Text\n"
-"\n"
-" The spell checker checks the spelling of all text in the current file.  "
-"When an unknown word is encountered, it is highlighted and a replacement can "
-"be edited.  It will then prompt to replace every instance of the given "
-"misspelled word in the current file.\n"
-"\n"
-" The following other functions are available in Spell Check mode:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2617
-msgid ""
-"External Command Help Text\n"
-"\n"
-" This menu allows you to insert the output of a command run by the shell "
-"into the current buffer (or a new buffer in multibuffer mode).\n"
-"\n"
-" The following keys are available in this mode:\n"
-"\n"
-msgstr ""
-
-#: nano.c:2720
+#: nano.c:2209
 #, c-format
 msgid "%s enable/disable"
 msgstr "%s käytössä/ei käytössä"
 
-#: nano.c:2735
+#: nano.c:2224
 msgid "enabled"
 msgstr "käytössä"
 
-#: nano.c:2736
+#: nano.c:2225
 msgid "disabled"
 msgstr "ei käytössä"
 
-#: nano.c:2800
+#: nano.c:2278
 msgid "NumLock glitch detected.  Keypad will malfunction with NumLock off"
 msgstr ""
 "NumLock-ongelma: Numeronäppäimistö toimii väärin, kun NumLock ei ole päällä."
 
-#: nano.c:3112
+#: nano.c:2508
 msgid "Main: set up windows\n"
 msgstr "Päätila: ikkunoiden asettelu\n"
 
-#: nano.c:3129
+#: nano.c:2515
 msgid "Main: bottom win\n"
 msgstr "Päätila: alaikkuna\n"
 
-#: nano.c:3135
+#: nano.c:2521
 msgid "Main: open file\n"
 msgstr "Päätila: avaa tiedosto\n"
 
-#: nano.c:3193
+#: nano.c:2574
 #, c-format
 msgid "I got Alt-O-%c! (%d)\n"
 msgstr "Vastaanotettu Alt-O-%c! (%d)\n"
 
-#: nano.c:3227
+#: nano.c:2608
 #, c-format
 msgid "I got Alt-[-1-%c! (%d)\n"
 msgstr "Vastaanotettu Alt-[-1-%c! (%d)\n"
 
-#: nano.c:3257
+#: nano.c:2641
 #, c-format
 msgid "I got Alt-[-2-%c! (%d)\n"
 msgstr "Vastaanotettu Alt-[-2-%c! (%d)\n"
 
-#: nano.c:3326
+#: nano.c:2712
 #, c-format
 msgid "I got Alt-[-%c! (%d)\n"
 msgstr "Vastaanotettu Alt-[-%c! (%d)\n"
 
-#: nano.c:3373
+#: nano.c:2738
 #, c-format
 msgid "I got Alt-%c! (%d)\n"
 msgstr "Vastaanotettu Alt-%c! (%d)\n"
 
-#: rcfile.c:81
-#, fuzzy, c-format
-msgid "Error in %s on line %d: "
-msgstr "Virhe tiedostossa %s rivillä %d: komento %s on tuntematon"
-
-#: rcfile.c:86
-msgid ""
-"\n"
-"Press return to continue starting nano\n"
-msgstr ""
-"\n"
-"Paina enteria jatkaaksesi Nanon käynnistämistä\n"
-
-#: rcfile.c:174
+#: search.c:127
 #, c-format
-msgid ""
-"color %s not understood.\n"
-"Valid colors are \"green\", \"red\", \"blue\", \n"
-"\"white\", \"yellow\", \"cyan\", \"magenta\" and \n"
-"\"black\", with the optional prefix \"bright\".\n"
-msgstr ""
+msgid "Case Sensitive Regexp Search%s%s"
+msgstr "Etsi kirjainkokotarkka sään. lauseke%s%s"
 
-#: rcfile.c:198
-msgid "Missing color name"
-msgstr ""
-
-#: rcfile.c:228 rcfile.c:282
-msgid "regex strings must begin and end with a \" character\n"
-msgstr ""
-
-#: rcfile.c:274
-msgid ""
-"\n"
-"\t\"start=\" requires a corresponding \"end=\""
-msgstr ""
-
-#: rcfile.c:324
-msgid "parse_rcfile: Read a comment\n"
-msgstr "parse_rcfile: Luki kommentin\n"
-
-#: rcfile.c:345
-#, fuzzy, c-format
-msgid "command %s not understood"
-msgstr "Virhe tiedostossa %s rivillä %d: komento %s on tuntematon"
-
-#: rcfile.c:357
+#: search.c:129
 #, c-format
-msgid "parse_rcfile: Parsing option %s\n"
-msgstr "parse_rcfile: Tulkitsee asetusta %s\n"
-
-#: rcfile.c:378
-#, fuzzy, c-format
-msgid "option %s requires an argument"
-msgstr "Virhe tiedostossa %s rivillä %d: asetus %s vaatii parametrin"
-
-#: rcfile.c:389
-#, fuzzy, c-format
-msgid "requested fill size %d too small"
-msgstr "Virhe tiedostossa %s rivillä %d: haluttu rivinpituus %d on liian pieni"
-
-#: rcfile.c:399
-#, fuzzy, c-format
-msgid "requested tab size %d too small"
-msgstr ""
-"Virhe tiedostossa %s rivillä %d: haluttu sarkaimen koko %d on liian pieni"
-
-#: rcfile.c:423
-#, c-format
-msgid "set flag %d!\n"
-msgstr "asetti lipun %d!\n"
-
-#: rcfile.c:429
-#, c-format
-msgid "unset flag %d!\n"
-msgstr "poisti lipun %d!\n"
-
-#: rcfile.c:439
-msgid "Errors found in .nanorc file"
-msgstr "Tiedostossa .nanorc oli virheitä"
-
-#: rcfile.c:447
-#, c-format
-msgid "Unable to open ~/.nanorc file, %s"
-msgstr "Ei voi avata tiedostoa ~/.nanorc: %s"
+msgid "Regexp Search%s%s"
+msgstr "Etsi säänn. lauseke%s%s"
 
 #: search.c:131
-msgid "Search"
-msgstr "Etsi"
+#, c-format
+msgid "Case Sensitive Search%s%s"
+msgstr "Kirjainkokotarkka etsintä%s%s"
 
-#. This string is just a modifier for the search prompt,
-#. no grammar is implied
-#: search.c:135
-msgid " [Case Sensitive]"
-msgstr " [Kirj. koko]"
+#: search.c:133
+#, c-format
+msgid "Search%s%s"
+msgstr "Etsi%s%s"
 
-#. This string is just a modifier for the search prompt,
-#. no grammar is implied
-#: search.c:139
-msgid " [Regexp]"
-msgstr " [Säännöke]"
-
-#. This string is just a modifier for the search prompt,
-#. no grammar is implied
-#: search.c:143
-msgid " [Backwards]"
-msgstr " [Taaksepäin]"
-
-#: search.c:145
+#: search.c:136
 msgid " (to replace)"
 msgstr " (korvattava)"
 
-#: search.c:153 search.c:440
+#: search.c:145 search.c:350
 msgid "Search Cancelled"
 msgstr "Etsintä peruttu"
 
-#: search.c:225
+#: search.c:209
 #, c-format
 msgid "\"%s...\" not found"
 msgstr "\"%s...\" ei löytynyt"
 
-#: search.c:293 search.c:355
+#: search.c:272
 msgid "Search Wrapped"
 msgstr "Etsintä jatkuu"
 
-#: search.c:458
-msgid "This is the only occurrence"
-msgstr ""
-
-#: search.c:468
+#: search.c:372
 #, c-format
 msgid "Replaced %d occurrences"
 msgstr "%d kohtaa korvautui"
 
-#: search.c:470
+#: search.c:374
 msgid "Replaced 1 occurrence"
 msgstr "1 kohta korvautui"
 
-#: search.c:609 search.c:727 search.c:743
+#: search.c:512 search.c:609 search.c:625
 msgid "Replace Cancelled"
 msgstr "Korvaus peruttu"
 
-#: search.c:653
+#: search.c:549
 msgid "Replace this instance?"
 msgstr "Korvataanko tämä kohta?"
 
-#: search.c:665
+#: search.c:561
 msgid "Replace failed: unknown subexpression!"
 msgstr "Korvaus epäonnistui: tuntematon alilauseke!"
 
-#: search.c:768
+#: search.c:650
 #, c-format
 msgid "Replace with [%s]"
 msgstr "Korvaa merkkijonolla [%s]"
 
-#: search.c:772 search.c:776
+#: search.c:654 search.c:658
 msgid "Replace with"
 msgstr "Korvaa merkkijonolla"
 
-#: search.c:818
+#. Ask for it
+#: search.c:693
 msgid "Enter line number"
 msgstr "Kirjoita rivin numero"
 
-#: search.c:820
+#: search.c:695
 msgid "Aborted"
 msgstr "Keskeytetty"
 
-#: search.c:829
+#: search.c:715
 msgid "Come on, be reasonable"
 msgstr "Jotakin järkevää, kiitos?"
 
-#: search.c:892
-msgid "Not a bracket"
-msgstr "Ei ole sulje"
-
-#. didn't find either left or right bracket
-#: search.c:937
-msgid "No matching bracket"
-msgstr "Ei vastaavaa suljetta"
-
-#: utils.c:184
-msgid "nano: malloc: out of memory!"
-msgstr "nano: malloc: muisti loppui!"
-
-#: utils.c:198
-msgid "nano: calloc: out of memory!"
-msgstr "nano: calloc: muisti loppui!"
-
-#: utils.c:208
-msgid "nano: realloc: out of memory!"
-msgstr "nano: realloc: muisti loppui!"
+#: search.c:720
+#, c-format
+msgid "Only %d lines available, skipping to last line"
+msgstr "Vain %d riviä olemassa: siirtyy viimeiselle riville"
 
 #: winio.c:124
 #, c-format
 msgid "actual_x_from_start for xplus=%d returned %d\n"
 msgstr "actual_x_from_start parametrilla xplus=%d palautti %d\n"
 
-#: winio.c:300 winio.c:470
-#, c-format
-msgid "Aha! '%c' (%d)\n"
-msgstr "Ahaa! '%c' (%d)\n"
-
-#: winio.c:502
+#: winio.c:449
 #, c-format
 msgid "input '%c' (%d)\n"
 msgstr "syöte '%c' (%d)\n"
 
-#: winio.c:550
+#: winio.c:489
 msgid "New Buffer"
 msgstr "Uusi teksti"
 
-#: winio.c:554
+#: winio.c:493
 msgid "  File: ..."
 msgstr "  Tiedosto: ..."
 
-#: winio.c:556
+#: winio.c:495
 msgid "   DIR: ..."
 msgstr "   HAKEMISTO: ..."
 
-#: winio.c:561
-#, fuzzy
-msgid "File: "
-msgstr "  Tiedosto: ..."
-
-#: winio.c:564
-#, fuzzy
-msgid " DIR: "
-msgstr "   HAKEMISTO: ..."
-
-#: winio.c:569
+#: winio.c:506
 msgid "Modified"
 msgstr "Muokattu"
 
-#: winio.c:1281
+#: winio.c:951
 #, c-format
 msgid "Moved to (%d, %d) in edit buffer\n"
 msgstr "Kohtaan (%d,%d) siirrytty muokkausruudussa\n"
 
-#: winio.c:1292
+#: winio.c:962
 #, c-format
 msgid "current->data = \"%s\"\n"
 msgstr "current->data = \"%s\"\n"
 
-#: winio.c:1366
+#: winio.c:1007
 #, c-format
 msgid "I got \"%s\"\n"
 msgstr "Saatiin \"%s\"\n"
 
+#. String of yes characters accepted
+#. Same for no
+#. And all, surprise!
+#. Temp string for above
 #. Yes, no and all are strings of any length.  Each string consists of
 #. all characters accepted as a valid character for that value.
 #. The first value will be the one displayed in the shortcuts.
-#: winio.c:1395
+#: winio.c:1030
 msgid "Yy"
 msgstr "Kk"
 
-#: winio.c:1396
+#: winio.c:1031
 msgid "Nn"
 msgstr "Ee"
 
-#: winio.c:1397
+#: winio.c:1032
 msgid "Aa"
 msgstr "aA"
 
-#: winio.c:1411
+#: winio.c:1045
 msgid "Yes"
 msgstr "Kyllä"
 
-#: winio.c:1415
+#: winio.c:1049
 msgid "All"
 msgstr "Kaikki"
 
-#: winio.c:1420
+#: winio.c:1054
 msgid "No"
 msgstr "Ei"
 
-#: winio.c:1630
+#: winio.c:1197
 #, c-format
 msgid "do_cursorpos: linepct = %f, bytepct = %f\n"
 msgstr "do_cursorpos: linepct = %f, bytepct = %f\n"
 
-#: winio.c:1639
-#, fuzzy, c-format
-msgid "line %d/%d (%.0f%%), col %ld/%ld (%.0f%%), char %ld/%ld (%.0f%%)"
-msgstr "rivi %d/%d (%.0f%%), merkki %ld/%ld (%.0f%%)"
+#: winio.c:1201
+#, c-format
+msgid "line %d of %d (%.0f%%), character %d of %d (%.0f%%)"
+msgstr "rivi %d/%d (%.0f%%), merkki %d/%d (%.0f%%)"
 
-#: winio.c:1800
+#: winio.c:1331
 msgid "Dumping file buffer to stderr...\n"
 msgstr "Syöttää tiedoston stderriin...\n"
 
-#: winio.c:1802
+#: winio.c:1333
 msgid "Dumping cutbuffer to stderr...\n"
 msgstr "Syöttää leiketilan stderriin...\n"
 
-#: winio.c:1804
+#: winio.c:1335
 msgid "Dumping a buffer to stderr...\n"
 msgstr "Syöttää tekstin stderriin...\n"
 
-#: winio.c:1880
+#: winio.c:1410
 msgid "The nano text editor"
 msgstr "Nano-editori"
 
-#: winio.c:1881
+#: winio.c:1411
 msgid "version "
 msgstr "versio "
 
-#: winio.c:1882
+#: winio.c:1412
 msgid "Brought to you by:"
 msgstr "Tehneet:"
 
-#: winio.c:1883
+#: winio.c:1413
 msgid "Special thanks to:"
 msgstr "Erikoiskiitokset:"
 
-#: winio.c:1884
+#: winio.c:1414
 msgid "The Free Software Foundation"
 msgstr "Free Software Foundation"
 
-#: winio.c:1885
+#: winio.c:1415
 msgid "For ncurses:"
 msgstr ""
 
-#: winio.c:1886
+#: winio.c:1416
 msgid "and anyone else we forgot..."
 msgstr "ja kaikille muille, jotka unohdimme..."
 
-#: winio.c:1887
+#: winio.c:1417
 msgid "Thank you for using nano!\n"
 msgstr "Kiitos Nanon käyttämisestä!\n"
 
-#~ msgid " -D \t\t--dos\t\t\tWrite file in DOS format\n"
-#~ msgstr " -D \t\t--dos\t\t\tKirjoita tiedosto DOS-muodossa\n"
-
-#~ msgid " -F \t\t--multibuffer\t\tEnable multiple file buffers\n"
-#~ msgstr " -F \t\t--multibuffer\t\tMahdollista useiden puskureiden käyttö\n"
-
-#~ msgid " -M \t\t--mac\t\t\tWrite file in Mac format\n"
-#~ msgstr " -M \t\t--mac\t\t\tKirjoita tiedosto Mac-muodossa\n"
-
-#~ msgid " -S\t\t--smooth\t\tSmooth scrolling\n"
-#~ msgstr " -S\t\t--smooth\t\tPehmeä vieritys\n"
-
-#~ msgid " -T [num]\t--tabsize=[num]\t\tSet width of a tab to num\n"
-#~ msgstr " -T [luku]\t--tabsize=[luku]\tAseta sarkaimen leveys\n"
-
-#~ msgid " -V \t\t--version\t\tPrint version information and exit\n"
-#~ msgstr " -V \t\t--version\t\tTulosta versiotiedot ja lopeta\n"
-
-#~ msgid " -c \t\t--const\t\t\tConstantly show cursor position\n"
-#~ msgstr " -c \t\t--const\t\t\tNäytä kohdistimen sijainti jatkuvasti\n"
-
-#~ msgid " -h \t\t--help\t\t\tShow this message\n"
-#~ msgstr " -h \t\t--help\t\t\tNäytä tämä ohje\n"
-
-#~ msgid " -i \t\t--autoindent\t\tAutomatically indent new lines\n"
-#~ msgstr " -i \t\t--autoindent\t\tSisennä uudet rivit automaattisesti\n"
-
-#~ msgid " -k \t\t--cut\t\t\tLet ^K cut from cursor to end of line\n"
-#~ msgstr " -k \t\t--cut\t\t\t^K leikkaa rivin loppuun saakka\n"
-
-#~ msgid " -l \t\t--nofollow\t\tDon't follow symbolic links, overwrite\n"
-#~ msgstr ""
-#~ " -l \t\t--nofollow\t\tÄlä seuraa symbolisia linkkejä, vaan\n"
-#~ "\t\t\t\t\tkorvaa ne tiedostoilla.\n"
-
-#~ msgid " -m \t\t--mouse\t\t\tEnable mouse\n"
-#~ msgstr " -m \t\t--mouse\t\t\tKäytä hiirtä\n"
-
-#~ msgid " -o [dir] \t--operatingdir=[dir]\tSet operating directory\n"
-#~ msgstr " -o [dir] \t--operatingdir=[hak.]\tAseta toimintahakemisto\n"
-
-#~ msgid " -p \t\t--pico\t\t\tEmulate Pico as closely as possible\n"
-#~ msgstr " -p \t\t--pico\t\t       Jäljittele Picoa mahdollisimman tarkasti\n"
-
-#~ msgid ""
-#~ " -r [#cols] \t--fill=[#cols]\t\tSet fill cols to (wrap lines at) #cols\n"
-#~ msgstr " -r [#lkm] \t--fill=[#lkm]\t\tRivitä annettua pidemmät rivit\n"
-
-#~ msgid " -s [prog] \t--speller=[prog]\tEnable alternate speller\n"
-#~ msgstr ""
-#~ " -s [ohjelma] \t--speller=[ohjelma]\tKäytä annettua oikolukuohjelmaa\n"
-
-#~ msgid " -t \t\t--tempfile\t\tAuto save on exit, don't prompt\n"
-#~ msgstr ""
-#~ " -t \t\t--tempfile\t\tTallenna tiedosto kysymättä\n"
-#~ "\t\t\t\t\tpoistuttaessa \n"
-
-#~ msgid " -v \t\t--view\t\t\tView (read only) mode\n"
-#~ msgstr " -v \t\t--view\t\t\tKatselutila (vain luku)\n"
-
-#~ msgid " -w \t\t--nowrap\t\tDon't wrap long lines\n"
-#~ msgstr " -w \t\t--nowrap\t\tÄlä rivitä pitkiä rivejä\n"
-
-#~ msgid " -x \t\t--nohelp\t\tDon't show help window\n"
-#~ msgstr " -x \t\t--nohelp\t\tÄlä näytä ohjeikkunaa\n"
-
-#~ msgid " -z \t\t--suspend\t\tEnable suspend\n"
-#~ msgstr " -z \t\t--suspend\t\tMahdollista keskeyttäminen\n"
-
-#~ msgid " +LINE\t\t\t\t\tStart at line number LINE\n"
-#~ msgstr " +RIVI\t\t\t\t\tSiirry riville RIVI\n"
-
-#~ msgid " -D \t\tWrite file in DOS format\n"
-#~ msgstr " -D \t\tKirjoita tiedosto DOS-muodossa\n"
-
-#~ msgid " -M \t\tWrite file in Mac format\n"
-#~ msgstr " -M \t\tKirjoita tiedosto Mac-muodossa\n"
-
-#~ msgid " -R\t\tUse regular expressions for search\n"
-#~ msgstr " -R\t\tEtsi säännöllisillä lausekkeilla\n"
-
-#~ msgid " -S\t\tSmooth scrolling\n"
-#~ msgstr " -S\t\tPehmeä vieritys\n"
-
 #~ msgid "Pavel Curtis, Zeyd Ben-Halim and Eric S. Raymond for ncurses"
 #~ msgstr "Pavel Curtis, Zeyd Ben-Halim ja Eric S. Raymond ncursesista"
-
-#~ msgid " -R\t\t--regexp\t\tUse regular expressions for search\n"
-#~ msgstr " -R\t\t--regexp\t\tEtsi säännöllisillä lausekkeilla\n"

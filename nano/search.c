@@ -2,7 +2,7 @@
 /**************************************************************************
  *   search.c                                                             *
  *                                                                        *
- *   Copyright (C) 2000-2002 Chris Allegretta                             *
+ *   Copyright (C) 2000 Chris Allegretta                                  *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -55,11 +55,11 @@ void regexp_cleanup(void)
 void search_init_globals(void)
 {
     if (last_search == NULL) {
-	last_search = charalloc(1);
+	last_search = nmalloc(1);
 	last_search[0] = 0;
     }
     if (last_replace == NULL) {
-	last_replace = charalloc(1);
+	last_replace = nmalloc(1);
 	last_replace[0] = 0;
     }
 }
@@ -74,14 +74,12 @@ int search_init(int replacing)
 {
     int i = 0;
     char *buf;
+    char *prompt, *reprompt = "";
     static char *backupstring = NULL;
-#ifndef NANO_SMALL
-    toggle *t;
-#endif
 
     search_init_globals();
 
-    buf = charalloc(strlen(last_search) + 5);
+    buf = nmalloc(strlen(last_search) + 5);
     buf[0] = 0;
 
 
@@ -125,28 +123,22 @@ int search_init(int replacing)
     else
 	strcpy(buf, "");
 
+    if (ISSET(USE_REGEXP) && ISSET(CASE_SENSITIVE))
+	prompt = _("Case Sensitive Regexp Search%s%s");
+    else if (ISSET(USE_REGEXP))
+	prompt = _("Regexp Search%s%s");
+    else if (ISSET(CASE_SENSITIVE))
+	prompt = _("Case Sensitive Search%s%s");
+    else
+	prompt = _("Search%s%s");
+
+    if (replacing)
+	reprompt = _(" (to replace)");
+
     /* This is now one simple call.  It just does a lot */
-    i = statusq(0, replacing ? replace_list : whereis_list, backupstring,
-	"%s%s%s%s%s%s", 
-	_("Search"),
-
-	/* This string is just a modifier for the search prompt,
-	   no grammar is implied */
-	ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : "",
-
-	/* This string is just a modifier for the search prompt,
-	   no grammar is implied */
-	ISSET(USE_REGEXP) ? _(" [Regexp]") : "",
-
-	/* This string is just a modifier for the search prompt,
-	   no grammar is implied */
-	ISSET(REVERSE_SEARCH) ? _(" [Backwards]") : "",
-
-	replacing ? _(" (to replace)") : "",
-	buf);
-
-    /* Release buf now that we don't need it anymore */
-    free(buf);
+    i = statusq(0, replacing ? replace_list : whereis_list,
+	replacing ? REPLACE_LIST_LEN : WHEREIS_LIST_LEN, backupstring,
+	prompt, reprompt, buf);
 
     /* Cancel any search, or just return with no previous search */
     if ((i == -1) || (i < 0 && !last_search[0])) {
@@ -155,10 +147,7 @@ int search_init(int replacing)
 	free(backupstring);
 	backupstring = NULL;
 	return -1;
-    } else 
-    switch (i) {
-
-    case -2:	/* Same string */
+    } else if (i == -2) {	/* Same string */
 #ifdef HAVE_REGEX_H
 	if (ISSET(USE_REGEXP)) {
 
@@ -168,9 +157,10 @@ int search_init(int replacing)
 	    else
 		regexp_init(answer);
 	}
+#else
+	;
 #endif
-	break;
-    case 0:		/* They entered something new */
+    } else if (i == 0) {	/* They entered something new */
 #ifdef HAVE_REGEX_H
 	if (ISSET(USE_REGEXP))
 	    regexp_init(answer);
@@ -178,32 +168,26 @@ int search_init(int replacing)
 	free(backupstring);
 	backupstring = NULL;
 	last_replace[0] = '\0';
-	break;
-    case TOGGLE_CASE_KEY:
-    case TOGGLE_BACKWARDS_KEY:
-#ifdef HAVE_REGEX_H
-    case TOGGLE_REGEXP_KEY:
-#endif
+    } else if (i == NANO_CASE_KEY) {	/* They want it case sensitive */
 	free(backupstring);
 	backupstring = NULL;
 	backupstring = mallocstrcpy(backupstring, answer);
 
-#ifndef NANO_SMALL
-	for (t = toggles; t != NULL; t = t->next)
-	    if (i == t->val)
-		TOGGLE(t->flag);
-#endif
+	if (ISSET(CASE_SENSITIVE))
+	    UNSET(CASE_SENSITIVE);
+	else
+	    SET(CASE_SENSITIVE);
 
 	return 1;
-    case NANO_OTHERSEARCH_KEY:
+    } else if (i == NANO_OTHERSEARCH_KEY) {
 	backupstring = mallocstrcpy(backupstring, answer);
 	return -2;		/* Call the opposite search function */
-    case NANO_FROMSEARCHTOGOTO_KEY:
+    } else if (i == NANO_FROMSEARCHTOGOTO_KEY) {
 	free(backupstring);
 	backupstring = NULL;
 	do_gotoline_void();
 	return -3;
-    default:
+    } else {			/* First line key, etc. */
 	do_early_abort();
 	free(backupstring);
 	backupstring = NULL;
@@ -242,155 +226,82 @@ int is_whole_word(int curr_pos, filestruct *fileptr, char *searchword)
     return FALSE;
 }
 
-int past_editbuff;	/* findnextstr() is now searching lines not displayed */
-
-filestruct *findnextstr(int quiet, int bracket_mode, filestruct * begin, int beginx,
+filestruct *findnextstr(int quiet, filestruct * begin, int beginx,
 			char *needle)
 {
     filestruct *fileptr;
-    char *searchstr, *rev_start = NULL, *found = NULL;
-    int current_x_find = 0;
+    char *searchstr, *found = NULL, *tmp;
+    int past_editbot = 0, current_x_find;
+
     fileptr = current;
 
-    past_editbuff = 0;
+    current_x_find = current_x + 1;
 
-    if (!ISSET(REVERSE_SEARCH)) {		/* forward search */
+    /* Are we searching the last line? (i.e. the line where search started) */
+    if ((fileptr == begin) && (current_x_find < beginx))
+	search_last_line = 1;
 
-	current_x_find = current_x + 1;
-#if 0
-	/* Are we now back to the place where the search started) */
-	if ((fileptr == begin) && (beginx > current_x_find))
-	    search_last_line = 1;
-#endif
-	/* Make sure we haven't passed the end of the string */
-	if (strlen(fileptr->data) < current_x_find)
-	    current_x_find--;
+    /* Make sure we haven't passed the end of the string */
+    if (strlen(fileptr->data) < current_x_find)
+	current_x_find--;
 
-	searchstr = &fileptr->data[current_x_find];
+    searchstr = &fileptr->data[current_x_find];
 
-	/* Look for needle in searchstr */
-	while ((found = strstrwrapper(searchstr, needle, rev_start)) == NULL) {
+    /* Look for needle in searchstr */
+    while ((found = strstrwrapper(searchstr, needle)) == NULL) {
 
-	    /* finished processing file, get out */
-	    if (search_last_line) {
-		if (!quiet)
-		    not_found_msg(needle);
-	        return NULL;
-	    }
-
-	    fileptr = fileptr->next;
-
-	    if (fileptr == editbot)
-		past_editbuff = 1;
-
-	    /* EOF reached ?, wrap around once */
-	    if (fileptr == NULL) {
-		if (bracket_mode)		/* don't wrap if looking for bracket match */
-		   return NULL;
-		fileptr = fileage;
-		past_editbuff = 1;
-		if (!quiet) {
-		   statusbar(_("Search Wrapped"));
-		SET(DISABLE_CURPOS);
-		}
-	    }
-
-	    /* Original start line reached */
-	    if (fileptr == begin)
-		search_last_line = 1;
-
-	    searchstr = fileptr->data;
-	}
-
-	/* We found an instance */
-	current_x_find = found - fileptr->data;
-#if 1
-	/* Ensure we haven't wrapped around again! */
-	if ((search_last_line) && (current_x_find > beginx)) {
+	/* finished processing file, get out */
+	if (search_last_line) {
 	    if (!quiet)
 		not_found_msg(needle);
 	    return NULL;
 	}
-#endif
-    } 
-#ifndef NANO_SMALL
-    else {	/* reverse search */
 
-	current_x_find = current_x - 1;
-#if 0
-	/* Are we now back to the place where the search started) */
-	if ((fileptr == begin) && (current_x_find > beginx))
+	fileptr = fileptr->next;
+
+	if (!past_editbot && (fileptr == editbot))
+	    past_editbot = 1;
+
+	/* EOF reached, wrap around once */
+	if (fileptr == NULL) {
+	    fileptr = fileage;
+
+	    past_editbot = 1;
+
+	    if (!quiet)
+		statusbar(_("Search Wrapped"));
+	}
+
+	/* Original start line reached */
+	if (fileptr == begin)
 	    search_last_line = 1;
-#endif
-	/* Make sure we haven't passed the begining of the string */
-#if 0	/* Is this required here ? */
-	if (!(&fileptr->data[current_x_find] - fileptr->data))      
-	    current_x_find++;
-#endif
-	rev_start = &fileptr->data[current_x_find];
+
 	searchstr = fileptr->data;
-
-	/* Look for needle in searchstr */
-	while ((found = strstrwrapper(searchstr, needle, rev_start)) == NULL) {
-
-	    /* finished processing file, get out */
-	    if (search_last_line) {
-		if (!quiet)
-		    not_found_msg(needle);
-		return NULL;
-	    }
-
-	    fileptr = fileptr->prev;
-
-	    if (fileptr == edittop->prev)
-		past_editbuff = 1;
-
-	    /* SOF reached ?, wrap around once */
-/* ? */	    if (fileptr == NULL) {
-		if (bracket_mode)
-		   return NULL;
-		fileptr = filebot;
-		past_editbuff = 1;
-		if (!quiet) {
-		    statusbar(_("Search Wrapped"));
-		    SET(DISABLE_CURPOS);
-		}
-	    }
-
-	    /* Original start line reached */
-	    if (fileptr == begin)
-		search_last_line = 1;
-
-	    searchstr = fileptr->data;
-	    rev_start = fileptr->data + strlen(fileptr->data);
-	}
-
-	/* We found an instance */
-	current_x_find = found - fileptr->data;
-#if 1
-	/* Ensure we haven't wrapped around again! */
-	if ((search_last_line) && (current_x_find < beginx)) {
-	    if (!quiet)
-		not_found_msg(needle);
-	    return NULL;
-	}
-#endif
     }
-#endif /* NANO_SMALL */
 
-    /* Set globals now that we are sure we found something */
+    /* We found an instance */
+    current_x_find = 0;
+    for (tmp = fileptr->data; tmp != found; tmp++)
+	current_x_find++;
+
+    /* Ensure we haven't wrapped around again! */
+    if ((search_last_line) && (current_x_find > beginx)) {
+	if (!quiet)
+	    not_found_msg(needle);
+	return NULL;
+    }
+
+    /* Set globals, now that we are sure we found something */
     current = fileptr;
     current_x = current_x_find;
 
-    if (!bracket_mode) {
-	if (past_editbuff)
-	   edit_update(fileptr, CENTER);
-	else
-	   update_line(current, current_x);
+    if (past_editbot)
+	edit_update(fileptr, CENTER);
+    else
+	update_line(current, current_x);
 
-	placewewant = xplustabs();
-	reset_cursor();
-    }
+    placewewant = xplustabs();
+    reset_cursor();
 
     return fileptr;
 }
@@ -413,8 +324,7 @@ void search_abort(void)
 int do_search(void)
 {
     int i;
-    filestruct *fileptr = current, *didfind;
-    int fileptr_x = current_x;
+    filestruct *fileptr = current;
 
     wrap_reset();
     i = search_init(0);
@@ -451,14 +361,8 @@ int do_search(void)
 	last_search = mallocstrcpy(last_search, answer);
 
     search_last_line = 0;
-    didfind = findnextstr(FALSE, FALSE, current, current_x, answer);
-
-    if ((fileptr == current) && (fileptr_x == current_x) &&
-	didfind != NULL)
-	statusbar(_("This is the only occurrence"));
-
+    findnextstr(0, current, current_x, answer);
     search_abort();
-
     return 1;
 }
 
@@ -566,7 +470,7 @@ char *replace_line(void)
     }
 
     /* Create buffer */
-    copy = charalloc(new_line_size);
+    copy = nmalloc(new_line_size);
 
     /* Head of Original Line */
     strncpy(copy, current->data, current_x);
@@ -598,8 +502,7 @@ int do_replace_loop(char *prevanswer, filestruct *begin, int *beginx,
 			int wholewords, int *i)
 {
     int replaceall = 0, numreplaced = 0;
-
-    filestruct *fileptr = NULL;
+    filestruct *fileptr;
     char *copy;
 
     switch (*i) {
@@ -627,14 +530,7 @@ int do_replace_loop(char *prevanswer, filestruct *begin, int *beginx,
     while (1) {
 
 	/* Sweet optimization by Rocco here */
-#if 0
-	fileptr = findnextstr(replaceall, FALSE, begin, *beginx, prevanswer);
-#else
-	if (fileptr != 0)
-	    fileptr = findnextstr(1, FALSE, begin, *beginx, prevanswer);
-	else
-	    fileptr = findnextstr(replaceall || (search_last_line ? 1 : 0), FALSE, begin, *beginx, prevanswer);
-#endif
+	fileptr = findnextstr(replaceall, begin, *beginx, prevanswer);
 
 	/* No more matches.  Done! */
 	if (!fileptr)
@@ -668,34 +564,20 @@ int do_replace_loop(char *prevanswer, filestruct *begin, int *beginx,
 	    }
 
 	    /* Cleanup */
-	    totsize -= strlen(current->data);
 	    free(current->data);
 	    current->data = copy;
-	    totsize += strlen(current->data);
 
-	    if (!ISSET(REVERSE_SEARCH)) {
-		/* Stop bug where we replace a substring of the replacement text */
-		current_x += strlen(last_replace) - 1;
+	    /* Stop bug where we replace a substring of the replacement text */
+	    current_x += strlen(last_replace) - 1;
 
-		/* Adjust the original cursor position - COULD BE IMPROVED */
-		if (search_last_line) {
-		    *beginx += strlen(last_replace) - strlen(last_search);
+	    /* Adjust the original cursor position - COULD BE IMPROVED */
+	    if (search_last_line) {
+		*beginx += strlen(last_replace) - strlen(last_search);
 
-		    /* For strings that cross the search start/end boundary */
-		    /* Don't go outside of allocated memory */
-		    if (*beginx < 1)
-			*beginx = 1;
-		}
-	    } else {
-		if (current_x > 1)
-		    current_x--;
-
-		if (search_last_line) {
-		    *beginx += strlen(last_replace) - strlen(last_search);
-
-		    if (*beginx > strlen(current->data))
-			*beginx = strlen(current->data);
-		}
+		/* For strings that cross the search start/end boundary */
+		/* Don't go outside of allocated memory */
+		if (*beginx < 1)
+		    *beginx = 1;
 	    }
 
 	    edit_refresh();
@@ -756,7 +638,7 @@ int do_replace(void)
     }
 
     if (ISSET(PICO_MODE)) {
-	buf = charalloc(strlen(last_replace) + 5);
+	buf = nmalloc(strlen(last_replace) + 5);
 	if (strcmp(last_replace, "")) {
 	    if (strlen(last_replace) > (COLS / 3)) {
 		strncpy(buf, last_replace, COLS / 3);
@@ -764,36 +646,28 @@ int do_replace(void)
 	    } else
 		sprintf(buf, "%s", last_replace);
 
-	    i = statusq(0, replace_list_2, "",
+	    i = statusq(0, replace_list_2, REPLACE_LIST_2_LEN, "",
 			_("Replace with [%s]"), buf);
 	}
 	else
-	    i = statusq(0, replace_list_2, "",
+	    i = statusq(0, replace_list_2, REPLACE_LIST_2_LEN, "",
 			_("Replace with"));
     }
     else
-	i = statusq(0, replace_list_2, last_replace, 
+	i = statusq(0, replace_list_2, REPLACE_LIST_2_LEN, last_replace, 
 			_("Replace with"));
 
     /* save where we are */
     begin = current;
-#if 0
-    /* why + 1  ? isn't this taken care of in findnextstr() ? */
     beginx = current_x + 1;
-#else
-    beginx = current_x;
-#endif
+
     search_last_line = 0;
 
     numreplaced = do_replace_loop(prevanswer, begin, &beginx, FALSE, &i);
 
     /* restore where we were */
     current = begin;
-#if 0
     current_x = beginx - 1;
-#else
-    current_x = beginx;
-#endif
     renumber_all();
     edit_update(current, CENTER);
     print_replaced(numreplaced);
@@ -807,42 +681,55 @@ void goto_abort(void)
     display_main_list();
 }
 
-int do_gotoline(int line, int save_pos)
+int do_gotoline(long defline)
 {
-    int i = 1;
+    long line, i = 1, j = 0;
+    filestruct *fileptr;
 
-    if (line <= 0) {		/* Ask for it */
+    if (defline > 0)		/* We already know what line we want to go to */
+	line = defline;
+    else {			/* Ask for it */
 
-	int j = 0;
-
-	j = statusq(0, goto_list, "", _("Enter line number"));
-	if (j != 0) {
+	j = statusq(0, goto_list, GOTO_LIST_LEN, "", _("Enter line number"));
+	if (j == -1) {
 	    statusbar(_("Aborted"));
 	    goto_abort();
 	    return 0;
-	}
-
-	line = atoi(answer);
-
-	/* Bounds check */
-	if (line <= 0) {
-	    statusbar(_("Come on, be reasonable"));
+	} else if (j != 0) {
+	    do_early_abort();
 	    goto_abort();
 	    return 0;
 	}
+	if (!strcmp(answer, "$")) {
+	    current = filebot;
+	    current_x = 0;
+	    edit_update(current, CENTER);
+	    goto_abort();
+	    return 1;
+	}
+	line = atoi(answer);
     }
 
-    for (current = fileage; ((current->next != NULL) && (i < line)); i++)
-	current = current->next;
-
-    current_x = 0;
-
-    /* if save_pos is non-zero, don't change the cursor position when
-       updating the edit window */
-    if (save_pos)
-    	edit_update(current, NONE);
-    else
+    /* Bounds check */
+    if (line <= 0) {
+	statusbar(_("Come on, be reasonable"));
+	goto_abort();
+	return 0;
+    }
+    if (line > totlines) {
+	statusbar(_("Only %d lines available, skipping to last line"),
+		  filebot->lineno);
+	current = filebot;
+	current_x = 0;
 	edit_update(current, CENTER);
+    } else {
+	for (fileptr = fileage; fileptr != NULL && i < line; i++)
+	    fileptr = fileptr->next;
+
+	current = fileptr;
+	current_x = 0;
+	edit_update(current, CENTER);
+    }
 
     placewewant = xplustabs();
     goto_abort();
@@ -851,99 +738,5 @@ int do_gotoline(int line, int save_pos)
 
 int do_gotoline_void(void)
 {
-    return do_gotoline(0, 0);
+    return do_gotoline(0);
 }
-
-#if (defined ENABLE_MULTIBUFFER || !defined DISABLE_SPELLER)
-void do_gotopos(int line, int pos_x, int pos_y, int pos_placewewant)
-{
-
-    /* since do_gotoline() resets the x-coordinate but not the
-       y-coordinate, set the coordinates up this way */
-    current_y = pos_y;
-    do_gotoline(line, 1);
-
-    /* recalculate the x-coordinate and place we want, just in case their
-       values are insane; if they aren't, they won't be changed by this */
-    current_x = pos_x;
-    pos_placewewant = xplustabs();
-    pos_x = actual_x(current, pos_placewewant);
-
-    /* set the rest of the coordinates up */
-    current_x = pos_x;
-    placewewant = pos_placewewant;
-    update_line(current, pos_x);
-}
-#endif
-
-#if !defined(NANO_SMALL) && defined(HAVE_REGEX_H)
-
-int do_find_bracket(void)
-{
-    char ch_under_cursor, wanted_ch;
-    char *pos, *brackets = "([{<>}])";
-    char regexp_pat[] = "[  ]";
-    int offset, have_past_editbuff = 0, flagsave, current_x_save, count = 1;
-    filestruct *current_save;
-
-    ch_under_cursor = current->data[current_x];
- 
-    if ((!(pos = strchr(brackets, ch_under_cursor))) || (!((offset = pos - brackets) < 8))) {
-	statusbar(_("Not a bracket"));
-	return 1;
-    }
-
-    blank_statusbar_refresh();
-
-    wanted_ch = *(brackets + ((strlen(brackets) - (offset + 1))));
-
-    current_x_save = current_x;
-    current_save = current;
-    flagsave = flags;
-    SET(USE_REGEXP);
-
-/* apparent near redundancy with regexp_pat[] here is needed, [][] works, [[]] doesn't */ 
-
-    if (offset < (strlen(brackets) / 2)) {			/* on a left bracket */
-	regexp_pat[1] = wanted_ch;
-	regexp_pat[2] = ch_under_cursor;
-	UNSET(REVERSE_SEARCH);
-    } else {							/* on a right bracket */
-	regexp_pat[1] = ch_under_cursor;
-	regexp_pat[2] = wanted_ch;
-	SET(REVERSE_SEARCH);
-    }
-
-    regexp_init(regexp_pat);
-
-    while (1) {
-	search_last_line = 0;
-	if (findnextstr(1, 1, current, current_x, regexp_pat)) {
-	    have_past_editbuff |= past_editbuff;
-	    if (current->data[current_x] == ch_under_cursor)	/* found identical bracket  */
-		count++;
-	    else {						/* found complementary bracket */
-		if (!(--count)) {
-		    if (have_past_editbuff)
-			edit_update(current, CENTER);
-		    else
-			update_line(current, current_x);
-		    placewewant = xplustabs();
-		    reset_cursor();
-		    break ;
-		}
-	    }
-	} else {						/* didn't find either left or right bracket */
-	    statusbar(_("No matching bracket"));
-	    current_x = current_x_save;
-	    current = current_save;
-	    break;
-	}
-    }
-
-    if (ISSET(REGEXP_COMPILED))
-	regexp_cleanup();
-    flags = flagsave;
-    return 0;
-}
-#endif

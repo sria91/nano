@@ -8,14 +8,8 @@ config.h.in
 config.log
 config.status
 configure
-config.guess
-config.sub
 depcomp
-install-sh
-missing
-mkinstalldirs
 nano
 nano.info
 stamp-h
-stamp-h.in
 stamp-h1

@@ -2,7 +2,7 @@
 /**************************************************************************
  *   utils.c                                                              *
  *                                                                        *
- *   Copyright (C) 1999-2002 Chris Allegretta                             *
+ *   Copyright (C) 1999 Chris Allegretta                                  *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,21 +36,6 @@
 #define _(string) (string)
 #endif
 
-int num_of_digits(int n)
-{
-    int i = 1;
-
-    if (n < 0)
-	n = 0 - n;
-
-    while (n > 10) {
-	n /= 10;
-	i++;
-    }
-
-    return i;
-}
-
 /* Lower case a string - must be null terminated */
 void lowercase(char *src)
 {
@@ -63,34 +47,6 @@ void lowercase(char *src)
     }
 }
 
-/* None of this is needed if we're using NANO_SMALL! */
-#ifndef NANO_SMALL
-char *revstrstr(char *haystack, char *needle, char *rev_start)
-{
-    char *p, *q, *r;
-
-    for(p = rev_start ; p >= haystack ; --p) {
-	for (r = p, q = needle ; (*q == *r) && (*q != '\0') ; r++, q++)
-	    ;
-	if (*q == '\0')
-	    return p;
-    }
-    return 0;
-}
-
-char *revstristr(char *haystack, char *needle, char *rev_start)
-{
-    char *p, *q, *r;
-
-    for(p = rev_start ; p >= haystack ; --p) {
-	for (r = p, q = needle ; (tolower(*q) == tolower(*r)) && (*q != '\0') ; r++, q++)
-	    ;
-	if (*q == '\0')
-	    return p;
-    }
-    return 0;
-}
-#endif /* NANO_SMALL */
 
 /* This is now mutt's version (called mutt_stristr) because it doesn't
    use memory allocation to do a simple search (yuck). */
@@ -103,74 +59,31 @@ char *stristr(char *haystack, char *needle)
     if (!needle)  
 	return (haystack);
     
-    while (*(p = haystack)) {
+    while (*(p = haystack))
+    {
 	for (q = needle; *p && *q && tolower (*p) == tolower (*q); p++, q++)
 	    ;
 	if (!*q)
 	    return (haystack);
-	haystack++;
+        haystack++;
     }
     return NULL;
 }
 
-char *strstrwrapper(char *haystack, char *needle, char *rev_start)
+char *strstrwrapper(char *haystack, char *needle)
 {
-
 #ifdef HAVE_REGEX_H
-    int  result;
-
     if (ISSET(USE_REGEXP)) {
-	if (!ISSET(REVERSE_SEARCH)) {
-	    result = regexec(&search_regexp, haystack, 10, regmatches, 0);
-	    if (!result)
-		return haystack + regmatches[0].rm_so;
-#ifndef NANO_SMALL
-	} else {
-	    char *i, *j;
-
-	    /* do a quick search forward first */
-	    if (!(regexec(&search_regexp, haystack, 10, regmatches, 0))) {
-		/* there's a match somewhere in the line - now search for it backwards, much slower */
-		for(i = rev_start ; i >= haystack ; --i)
-		    if (!(result = regexec(&search_regexp, i, 10, regmatches, 0))) {
-			j = i + regmatches[0].rm_so;
-			if (j <= rev_start)
-			    return j;
-		    }
-	    }
-#endif
-	}
+	int result = regexec(&search_regexp, haystack, 10, regmatches, 0);
+	if (!result)
+	    return haystack + regmatches[0].rm_so;
 	return 0;
     }
 #endif
-#ifndef NANO_SMALL
-    if (ISSET(CASE_SENSITIVE)) {
-	if (ISSET(REVERSE_SEARCH))
-	    return revstrstr(haystack, needle, rev_start);
-        else
-	    return strstr(haystack,needle);
-
-    } else {
-	if (ISSET(REVERSE_SEARCH))
-	    return revstristr(haystack, needle, rev_start);
-	else
-#endif
-	    return stristr(haystack, needle);
-#ifndef NANO_SMALL
-    }
-#endif
-}
-
-/* This is a wrapper for the perror function.  The wrapper takes care of 
- * ncurses, calls perror (which writes to STDERR), then refreshes the 
- * screen.  Note that nperror causes the window to flicker once.
- */
-void nperror(const char *s) {
-	/* leave ncurses mode, go to the terminal */
-    if (endwin() != ERR) {
-	perror(s);		/* print the error */
-	total_refresh();	/* return to ncurses and repaint */
-    }
+    if (ISSET(CASE_SENSITIVE))
+	return strstr(haystack, needle);
+    else
+	return stristr(haystack, needle);
 }
 
 /* Thanks BG, many ppl have been asking for this... */
@@ -184,20 +97,6 @@ void *nmalloc(size_t howmuch)
 	die(_("nano: malloc: out of memory!"));
 
     return r;
-}
-
-/* We're going to need this too - Hopefully this will minimize
-   the transition cost of moving to the apropriate function. */
-char *charalloc(size_t howmuch)
-{
-    void *r;
-
-    /* Panic save? */
-
-    if (!(r = calloc(howmuch, sizeof (char))))
-	die(_("nano: calloc: out of memory!"));
-
-    return (char *) r;
 }
 
 void *nrealloc(void *ptr, size_t howmuch)
@@ -229,7 +128,7 @@ void *mallocstrcpy(char *dest, char *src)
 	return(dest);
     }
 
-    dest = charalloc(strlen(src) + 1);
+    dest = nmalloc(strlen(src) + 1);
     strcpy(dest, src);
 
     return dest;
@@ -240,7 +139,7 @@ void *mallocstrcpy(char *dest, char *src)
 void new_magicline(void)
 {
     filebot->next = nmalloc(sizeof(filestruct));
-    filebot->next->data = charalloc(1);
+    filebot->next->data = nmalloc(1);
     filebot->next->data[0] = '\0';
     filebot->next->prev = filebot;
     filebot->next->next = NULL;

@@ -9,7 +9,7 @@ Release		: %{rel}
 Copyright	: GPL
 Group		: Console/Editors
 URL		: http://www.nano-editor.org
-Source		: http://www.nano-editor.org/dist/v1.1/%{name}/%{name}-%{ver}.tar.gz
+Source		: http://www.nano-editor.org/dist/v1.0/%{name}/%{name}-%{ver}.tar.gz
 BuildRoot	: /var/tmp/%{name}-buildroot
 Requires	: ncurses
 
@@ -30,15 +30,15 @@ make DESTDIR="$RPM_BUILD_ROOT" install
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS BUGS COPYING ChangeLog INSTALL NEWS README THANKS TODO nanorc.sample
+%doc AUTHORS BUGS COPYING ChangeLog INSTALL NEWS README THANKS TODO
 %{_bindir}/nano
 %{_mandir}/*/*
 %{_datadir}/locale/*/LC_MESSAGES/nano.mo
 %{_infodir}/nano.info*
 
 %changelog
-* Sat Mar 30 2002 Chris Allegretta <chrisa@asty.org>
-- Accepted into main distribution
+* Wed Apr 10 2002 Chris Allegretta <chrisa@asty.org>
+- Accepted into 1.0 distribution
 - Added Packager and URL tage from original spec file.
 * Tue Mar 06 2002 Brett Pemberton <generica@email.com>
 - Initial spec-file
