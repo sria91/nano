@@ -664,36 +664,55 @@ void goto_abort(void)
     display_main_list();
 }
 
-int do_gotoline(long line)
+int do_gotoline(long defline)
 {
-    long i = 1;
+    long line, i = 1, j = 0;
+    filestruct *fileptr;
 
-    if (line <= 0) {		/* Ask for it */
-
-	long j = 0;
+    if (defline > 0)		/* We already know what line we want to go to */
+	line = defline;
+    else {			/* Ask for it */
 
 	j = statusq(0, goto_list, GOTO_LIST_LEN, "", _("Enter line number"));
-	if (j != 0) {
+	if (j == -1) {
 	    statusbar(_("Aborted"));
 	    goto_abort();
 	    return 0;
-	}
-
-	line = atoi(answer);
-
-	/* Bounds check */
-	if (line <= 0) {
-	    statusbar(_("Come on, be reasonable"));
+	} else if (j != 0) {
+	    do_early_abort();
 	    goto_abort();
 	    return 0;
 	}
+	if (!strcmp(answer, "$")) {
+	    current = filebot;
+	    current_x = 0;
+	    edit_update(current, CENTER);
+	    goto_abort();
+	    return 1;
+	}
+	line = atoi(answer);
     }
 
-    for (current = fileage; ((current->next != NULL) && (i < line)); i++)
-	current = current->next;
+    /* Bounds check */
+    if (line <= 0) {
+	statusbar(_("Come on, be reasonable"));
+	goto_abort();
+	return 0;
+    }
+    if (line > totlines) {
+	statusbar(_("Only %d lines available, skipping to last line"),
+		  filebot->lineno);
+	current = filebot;
+	current_x = 0;
+	edit_update(current, CENTER);
+    } else {
+	for (fileptr = fileage; fileptr != NULL && i < line; i++)
+	    fileptr = fileptr->next;
 
-    current_x = 0;
-    edit_update(current, CENTER);
+	current = fileptr;
+	current_x = 0;
+	edit_update(current, CENTER);
+    }
 
     goto_abort();
     return 1;

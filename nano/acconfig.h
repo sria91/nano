@@ -51,8 +51,3 @@
 /* Define this to disable any and all text wrapping */
 #undef DISABLE_WRAPPING
 
-/* Define this to disable the mouse functions */
-#undef DISABLE_MOUSE
-
-/* Define this to use the .nanorc file */
-#undef ENABLE_NANORC

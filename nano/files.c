@@ -258,8 +258,6 @@ int do_insertfile(void)
     char *realname = NULL;
 
     wrap_reset();
-    currshortcut = writefile_list;
-    currslen = WRITEFILE_LIST_LEN;
     i = statusq(1, writefile_list, WRITEFILE_LIST_LEN, "",
 		_("File to insert [from ./] "));
     if (i != -1) {
@@ -278,8 +276,6 @@ int do_insertfile(void)
 	if (i == NANO_TOFILES_KEY) {
 	    
 	    char *tmp = do_browse_from(realname);
-	    currshortcut = writefile_list;
-	    currslen = WRITEFILE_LIST_LEN;
 
 #ifdef DISABLE_TABCOMP
 	    realname = NULL;
@@ -507,8 +503,6 @@ int do_writeout(char *path, int exiting)
     static int did_cred = 0;
 #endif
 
-    currshortcut = writefile_list;
-    currslen = WRITEFILE_LIST_LEN;
     answer = mallocstrcpy(answer, path);
 
     if ((exiting) && (ISSET(TEMP_OPT))) {
@@ -535,8 +529,6 @@ int do_writeout(char *path, int exiting)
 	if (i == NANO_TOFILES_KEY) {
 
 	    char *tmp = do_browse_from(answer);
-	    currshortcut = writefile_list;
-	    currslen = WRITEFILE_LIST_LEN;
 
 	    if (tmp != NULL)
 		answer = mallocstrcpy(answer, tmp);
@@ -1139,8 +1131,6 @@ char *do_browser(char *inpath)
     int lineno = 0, kb;
     char **filelist = (char **) NULL;
 
-    currshortcut = browser_list;
-    currslen = BROWSER_LIST_LEN;
     /* If path isn't the same as inpath, we are being passed a new
 	dir as an arg.  We free it here so it will be copied from 
 	inpath below */
@@ -1170,10 +1160,8 @@ char *do_browser(char *inpath)
 
     /* Loop invariant: Microsoft sucks. */
     do {
-	DIR *test_dir;
-
-	blank_statusbar_refresh();
-
+	blank_edit();
+	blank_statusbar();
  	editline = 0;
 	col = 0;
 	    
@@ -1184,14 +1172,6 @@ char *do_browser(char *inpath)
 	    lineno = selected / width;
 
 	switch (kbinput) {
-
-#ifndef NANO_SMALL
-#ifdef NCURSES_MOUSE_VERSION
-        case KEY_MOUSE:
-            do_mouse();
-            break;
-#endif
-#endif
 	case KEY_UP:
 	case 'u':
 	    if (selected - width >= 0)
@@ -1252,23 +1232,20 @@ char *do_browser(char *inpath)
 	case 'S':
 
 	    /* You can't cd up from / */
-	    if (!strcmp(filelist[selected], "/..") && !strcmp(path, "/")) {
+	    if (!strcmp(filelist[selected], "/..") && !strcmp(path, "/"))
 		statusbar(_("Can't move up a directory"));
-		break;
-	    }
-
-	    path = mallocstrcpy(path, filelist[selected]);
+	    else
+		path = mallocstrcpy(path, filelist[selected]);
 
 	    st = filestat(path);
 	    if (S_ISDIR(st.st_mode)) {
-		if ((test_dir = opendir(path)) == NULL) {
+		if (opendir(path) == NULL) {
 		    /* We can't open this dir for some reason.  Complain */
 		    statusbar(_("Can't open \"%s\": %s"), path, strerror(errno));
-		    striponedir(path);
+		    striponedir(path);		    
 		    align(&path);
 		    break;
 		} 
-		closedir(test_dir);
 
 		if (!strcmp("..", tail(path))) {
 		    /* They want to go up a level, so strip off .. and the
@@ -1285,41 +1262,6 @@ char *do_browser(char *inpath)
 		abort = 1;
 	    }
 	    break;
-	/* Goto a specific directory */
-	case 'g':	/* Pico compatibility */
-	case 'G':
-	case NANO_GOTO_KEY:
-
-	    curs_set(1);
-	    j = statusq(0, gotodir_list, GOTODIR_LIST_LEN, "", _("Goto Directory"));
-	    bottombars(browser_list, BROWSER_LIST_LEN);
-	    curs_set(0);
-
-	    if (j < 0) {
-		statusbar(_("Goto Cancelled"));
-		break;
-	    }
-
-	    if (answer[0] != '/') {
-		char *saveanswer = NULL;
-
-		saveanswer = mallocstrcpy(saveanswer, answer);
-		answer = realloc(answer, strlen(path) + strlen(saveanswer) + 2);
-		sprintf(answer, "%s/%s", path, saveanswer);
-		free(saveanswer);
-	    }
-
-	    if ((test_dir = opendir(answer)) == NULL) {
-		/* We can't open this dir for some reason.  Complain */
-		statusbar(_("Can't open \"%s\": %s"), answer, strerror(errno));
-		break;
-	    } 
-	    closedir(test_dir);
-
-	    /* Start over again with the new path value */
-	    path = mallocstrcpy(path, answer);
-	    return do_browser(path);
-
 	/* Stuff we want to abort the browser */
 	case 'q':
 	case 'Q':
@@ -1331,8 +1273,6 @@ char *do_browser(char *inpath)
 	}
 	if (abort)
 	    break;
-
-	blank_edit();
 
 	if (width)
 	    i = width * editwinrows * ((selected / width) / editwinrows);

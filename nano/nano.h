@@ -90,14 +90,6 @@ typedef struct toggle {
    int flag;		/* What flag actually gets toggled */
 } toggle;
 
-#ifdef ENABLE_NANORC
-typedef struct rcoption {
-   char *name;
-   int flag;
-} rcoption;
- 
-#endif /* ENABLE_NANORC */
-
 /* Bitwise flags so we can save space (or more correctly, not waste it) */
 
 #define MODIFIED		(1<<0)
@@ -252,13 +244,12 @@ know what you're doing */
 #define REPLACE_LIST_LEN 6
 #define REPLACE_LIST_2_LEN 3
 #define GOTO_LIST_LEN 3
-#define GOTODIR_LIST_LEN 1
 #define HELP_LIST_LEN 3
 #define SPELL_LIST_LEN 1
 
 #ifndef DISABLE_BROWSER
 #define WRITEFILE_LIST_LEN 2
-#define BROWSER_LIST_LEN 4
+#define BROWSER_LIST_LEN 3
 #else
 #define WRITEFILE_LIST_LEN 1
 #endif

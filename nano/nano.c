@@ -64,11 +64,15 @@
 /* Former globals, now static */
 int fill = 0;			/* Fill - where to wrap lines, basically */
 
+#ifndef DISABLE_SPELLER
+static char *alt_speller;	/* Alternative spell command */
+#endif
+
 struct termios oldterm;		/* The user's original term settings */
 static struct sigaction act;	/* For all out fun signal handlers */
 
 #ifndef DISABLE_HELP
-static char *help_text_init = "";	/* Initial message, not including shortcuts */
+static char *help_text_init = ""; /* Initial message, not including shortcuts */
 #endif
 
 char *last_search = NULL;	/* Last string we searched for */
@@ -89,7 +93,7 @@ RETSIGTYPE finish(int sigage)
 	mvwaddstr(bottomwin, 2, 0, hblank);
     } else
 	mvwaddstr(bottomwin, 0, 0, hblank);
-
+    
     wrefresh(bottomwin);
     endwin();
 
@@ -116,7 +120,7 @@ void die(char *msg, ...)
 	name = "nano.save";
 	i = write_file(name, 1);
     } else {
-
+	
 	char *buf = nmalloc(strlen(filename) + 6);
 	strcpy(buf, filename);
 	strcat(buf, ".save");
@@ -250,7 +254,7 @@ void delete_node(filestruct * fileptr)
 	return;
 
     if (fileptr->data != NULL)
-	free(fileptr->data);
+        free(fileptr->data);
     free(fileptr);
 }
 
@@ -373,7 +377,7 @@ void usage(void)
 #endif
     printf(_
 	   (" -l 		--nofollow		Don't follow symbolic links, overwrite\n"));
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
     printf(_(" -m 		--mouse			Enable mouse\n"));
 #endif
@@ -415,14 +419,13 @@ void usage(void)
 #endif
     printf(_
 	   (" -l 		Don't follow symbolic links, overwrite\n"));
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
     printf(_(" -m 		Enable mouse\n"));
 #endif
 #endif
     printf(_(" -p 		Emulate Pico as closely as possible\n"));
-    printf(_
-	   (" -r [#cols] 	Set fill cols to (wrap lines at) #cols\n"));
+    printf(_(" -r [#cols] 	Set fill cols to (wrap lines at) #cols\n"));
 #ifndef DISABLE_SPELLER
     printf(_(" -s [prog]  	Enable alternate speller\n"));
 #endif
@@ -449,32 +452,26 @@ void version(void)
 #ifdef NANO_EXTRA
     printf(" --enable-extra");
 #endif
-#ifdef ENABLE_NANORC
-    printf(" --enable-nanorc");
-#endif
 
 #ifdef NANO_SMALL
     printf(" --enable-tiny");
 #else
-#ifdef DISABLE_BROWSER
+ #ifdef DISABLE_BROWSER
     printf(" --disable-browser");
-#endif
-#ifdef DISABLE_TABCOMP
+ #endif
+ #ifdef DISABLE_TABCOMP
     printf(" --disable-tabcomp");
-#endif
-#ifdef DISABLE_JUSTIFY
+ #endif
+ #ifdef DISABLE_JUSTIFY
     printf(" --disable-justify");
-#endif
-#ifdef DISABLE_SPELLER
+ #endif
+ #ifdef DISABLE_SPELLER
     printf(" --disable-speller");
-#endif
-#ifdef DISABLE_HELP
+ #endif
+ #ifdef DISABLE_HELP
     printf(" --disable-help");
+ #endif
 #endif
-#ifdef DISABLE_MOUSE
-    printf(" --disable-mouse");
-#endif
-#endif /* NANO_SMALL */
 
 #ifdef DISABLE_WRAPPING
     printf(" --disable-wrapping");
@@ -503,8 +500,7 @@ filestruct *make_new_node(filestruct * prevnode)
 }
 
 /* Splice a node into an existing filestruct */
-void splice_node(filestruct * begin, filestruct * newnode,
-		 filestruct * end)
+void splice_node(filestruct * begin, filestruct * newnode, filestruct * end)
 {
     newnode->next = end;
     newnode->prev = begin;
@@ -822,11 +818,11 @@ void do_wrap(filestruct * inptr, char input_char)
 	    current_x = 0;
 	    if (ISSET(AUTOINDENT)) {
 		int i = 0;
-		while ((inptr->next->data[i] == ' '
-			|| inptr->next->data[i] == '\t')) {
+		while ((inptr->next->data[i] == ' ' 
+	    		|| inptr->next->data[i] == '\t')) {
 		    i++;
 		    right++;
-		}
+		}			
 	    }
 	    down = 1;
 	}
@@ -875,11 +871,11 @@ void do_wrap(filestruct * inptr, char input_char)
 	    right = current_x - current_word_start;
 	    if (ISSET(AUTOINDENT)) {
 		int i = 0;
-		while ((inptr->next->data[i] == ' '
-			|| inptr->next->data[i] == '\t')) {
+		while ((inptr->next->data[i] == ' ' 
+	    		|| inptr->next->data[i] == '\t')) {
 		    i++;
 		    right++;
-		}
+		}			
 	    }
 
 	    i = current_word_start - 1;
@@ -926,26 +922,25 @@ void do_wrap(filestruct * inptr, char input_char)
 	int old_x = current_x, old_y = current_y;
 
 	/* Plus one for the space which concatenates the two lines together plus 1 for \0. */
-	char *p =
-	    nmalloc((strlen(temp->data) + strlen(inptr->next->data) + 2)
-		    * sizeof(char));
+	char *p = nmalloc((strlen(temp->data) + strlen(inptr->next->data) + 2) 
+			* sizeof(char));
 
 	if (ISSET(AUTOINDENT)) {
 	    int non = 0;
 
-	    /* Grab the beginning of the next line until it's not a 
-	       space or tab, then null terminate it so we can strcat it
-	       to hell */
-	    while ((inptr->next->data[non] == ' '
-		    || inptr->next->data[non] == '\t'))
-		p[non] = inptr->next->data[non++];
+	     /* Grab the beginning of the next line until it's not a 
+		space or tab, then null terminate it so we can strcat it
+		to hell */
+	    while ((inptr->next->data[non] == ' ' 
+	    	|| inptr->next->data[non] == '\t'))
+	    	    p[non] = inptr->next->data[non++];
 
 	    p[non] = 0;
 	    strcat(p, temp->data);
 	    strcat(p, " ");
 
-	    /* Now tack on the rest of the next line after the spaces and
-	       tabs */
+	     /* Now tack on the rest of the next line after the spaces and
+		tabs */
 	    strcat(p, &inptr->next->data[non]);
 	} else {
 	    strcpy(p, temp->data);
@@ -982,7 +977,7 @@ void do_wrap(filestruct * inptr, char input_char)
 	    char *t = NULL;
 	    int extra = 0;
 	    if (spc) {
-		while ((*spc == ' ') || (*spc == '\t')) {
+	        while ((*spc == ' ') || (*spc == '\t')) {
 		    extra++;
 		    spc++;
 		    totsize++;
@@ -1001,7 +996,7 @@ void do_wrap(filestruct * inptr, char input_char)
     /* Everything about it makes me want this line here but it causes
      * totsize to be high by one for some reason.  Sigh. (Rob) */
     /* totsize++; */
-
+	
     renumber(inptr);
     edit_update(edittop, TOP);
 
@@ -1059,7 +1054,7 @@ void check_wrap(filestruct * inptr, char ch)
 	    do_wrap(inptr, ch);
     }
 }
-#endif				/* DISABLE_WRAPPING */
+#endif /* DISABLE_WRAPPING */
 
 /* Stuff we do when we abort from programs and want to clean up the
  * screen.  This doesnt do much right now.
@@ -1153,8 +1148,8 @@ int do_delete(void)
 
 	align(&current->data);
 
-	/* Now that we have a magic lnie again, we can check for both being
-	   on the line before filebot as well as at filebot */
+    /* Now that we have a magic lnie again, we can check for both being
+       on the line before filebot as well as at filebot */
     } else if (current->next != NULL && current->next != filebot) {
 	current->data = nrealloc(current->data,
 				 strlen(current->data) +
@@ -1226,12 +1221,13 @@ int do_int_spell_fix(char *word)
     edit_update(fileage, TOP);
 
     /* make sure word is still mis-spelt (i.e. when multi-errors) */
-    if (findnextstr(TRUE, fileage, beginx_top, prevanswer) != NULL) {
+    if (findnextstr(TRUE, fileage, beginx_top, prevanswer) != NULL)
+    {
 	do_replace_highlight(TRUE, prevanswer);
 
 	/* allow replace word to be corrected */
-	i = statusq(0, spell_list, SPELL_LIST_LEN, last_replace,
-		    _("Edit a replacement"));
+	i = statusq(0, spell_list, SPELL_LIST_LEN, last_replace, 
+		_("Edit a replacement"));
 
 	do_replace_highlight(FALSE, prevanswer);
 
@@ -1278,7 +1274,7 @@ int do_int_speller(char *tempfile_name)
 
     /* A new process to run spell in */
 
-    if ((pid_spell = fork()) == 0) {
+    if ( (pid_spell = fork()) == 0) {
 
 	/* Child continues, (i.e. future spell process) */
 
@@ -1286,7 +1282,7 @@ int do_int_speller(char *tempfile_name)
 
 	/* replace the standard in with the tempfile */
 
-	if ((tempfile_fd = open(tempfile_name, O_RDONLY)) == -1) {
+	if ( (tempfile_fd = open(tempfile_name, O_RDONLY)) == -1) {
 
 	    close(in_fd[1]);
 	    exit(1);
@@ -1332,17 +1328,17 @@ int do_int_speller(char *tempfile_name)
 
     /* Get system pipe buffer size */
 
-    if ((pipe_buff_size = fpathconf(in_fd[0], _PC_PIPE_BUF)) < 1) {
+    if ( (pipe_buff_size = fpathconf(in_fd[0], _PC_PIPE_BUF)) < 1) {
 
 	close(in_fd[0]);
 	return FALSE;
     }
 
-    read_buff = nmalloc(pipe_buff_size + 1);
+    read_buff = nmalloc( pipe_buff_size + 1 );
 
     /* Process the returned spelling errors */
 
-    while ((bytesread = read(in_fd[0], read_buff, pipe_buff_size)) > 0) {
+    while ( (bytesread = read(in_fd[0], read_buff, pipe_buff_size)) > 0) {
 
 	read_buff[bytesread] = (char) NULL;
 	read_buff_word = read_buff_ptr = read_buff;
@@ -1355,14 +1351,14 @@ int do_int_speller(char *tempfile_name)
 
 	    if (*read_buff_ptr == '\n') {
 		*read_buff_ptr = (char) NULL;
-		if (!do_int_spell_fix(read_buff_word)) {
+		if (!do_int_spell_fix(read_buff_word)) { 
 
 		    close(in_fd[0]);
 		    free(read_buff);
 		    replace_abort();
 
 		    return TRUE;
-		}
+	        }
 		read_buff_word = read_buff_ptr;
 		read_buff_word++;
 	    }
@@ -1381,7 +1377,8 @@ int do_int_speller(char *tempfile_name)
     if (WIFEXITED(spell_status)) {
 	if (WEXITSTATUS(spell_status) != 0)
 	    return FALSE;
-    } else
+    }
+    else
 	return FALSE;
 
     return TRUE;
@@ -1393,7 +1390,6 @@ int do_alt_speller(char *file_name)
     int alt_spell_status;
     pid_t pid_spell;
     char *ptr;
-    long lineno_cur = current->lineno;
     static int arglen = 3;
     static char **spellargs = (char **) NULL;
 
@@ -1414,7 +1410,7 @@ int do_alt_speller(char *file_name)
     spellargs[arglen - 2] = file_name;
 
     /* Start a new process for the alternate speller */
-    if ((pid_spell = fork()) == 0) {
+    if ( (pid_spell = fork()) == 0) {
 
 	/* Start alternate spell program, we are using the PATH here!?!? */
 	execvp(spellargs[0], spellargs);
@@ -1435,15 +1431,16 @@ int do_alt_speller(char *file_name)
     if (WIFEXITED(alt_spell_status)) {
 	if (WEXITSTATUS(alt_spell_status) != 0)
 	    return FALSE;
-    } else
+    }
+    else
 	return FALSE;
 
     refresh();
     free_filestruct(fileage);
     global_init();
     open_file(file_name, 0, 1);
-
-    do_gotoline(lineno_cur);
+    edit_update(fileage, CENTER);
+    display_main_list();
     set_modified();
 
     return TRUE;
@@ -1462,7 +1459,7 @@ int do_spell(void)
 
     if ((temp = tempnam(0, "nano.")) == NULL) {
 	statusbar(_("Could not create a temporary filename: %s"),
-		  strerror(errno));
+			strerror(errno));
 	return 0;
     }
 
@@ -1498,7 +1495,8 @@ int do_exit(void)
     if (ISSET(TEMP_OPT)) {
 	i = 1;
     } else {
-	i = do_yesno(0, 0,
+	i =
+	    do_yesno(0, 0,
 		     _
 		     ("Save modified buffer (ANSWERING \"No\" WILL DESTROY CHANGES) ? "));
     }
@@ -1519,7 +1517,7 @@ int do_exit(void)
     return 1;
 }
 
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
 void do_mouse(void)
 {
@@ -1529,87 +1527,66 @@ void do_mouse(void)
     if (getmouse(&mevent) == ERR)
 	return;
 
-    /* If mouse not in edit or bottom window, return */
-    if (wenclose(edit, mevent.y, mevent.x)) {
+    /* If mouse not in edit window, return (add help selection later). */
+    if (!wenclose(edit, mevent.y, mevent.x))
+	return;
 
-	/* Don't let people screw with the marker when they're in a
-	   subfunction */
-	if (currshortcut != main_list)
+    /* Subtract out size of topwin.  Perhaps we need a constant somewhere? */
+    mevent.y -= 2;
+
+    /* Selecting where the cursor is sets the mark.
+     * Selecting beyond the line length with the cursor at the end of the
+     * line sets the mark as well. 
+     */
+    if ((mevent.y == current_y) &&
+	((mevent.x == current_x) || (current_x == strlen(current->data)
+				     && (mevent.x >
+					 strlen(current->data))))) {
+	if (ISSET(VIEW_MODE)) {
+	    print_view_warning();
 	    return;
-
-	/* Subtract out size of topwin.  Perhaps we need a constant somewhere? */
-	mevent.y -= 2;
-
-	/* Selecting where the cursor is sets the mark.
-	 * Selecting beyond the line length with the cursor at the end of the
-	 * line sets the mark as well. 
-	 */
-	if ((mevent.y == current_y) &&
-	    ((mevent.x == current_x) || (current_x == strlen(current->data)
-					 && (mevent.x >
-					     strlen(current->data))))) {
-	    if (ISSET(VIEW_MODE)) {
-		print_view_warning();
-		return;
-	    }
-	    do_mark();
-	} else if (mevent.y > current_y) {
-	    while (mevent.y > current_y) {
-		if (current->next != NULL)
-		    current = current->next;
-		else
-		    break;
-		current_y++;
-	    }
-	} else if (mevent.y < current_y) {
-	    while (mevent.y < current_y) {
-		if (current->prev != NULL)
-		    current = current->prev;
-		else
-		    break;
-		current_y--;
-	    }
 	}
-	current_x = mevent.x;
-	placewewant = current_x;
-	while (foo < current_x) {
-	    if (current->data[foo] == NANO_CONTROL_I) {
-		current_x -= tabsize - (foo % tabsize);
-		tab_found = 1;
-	    } else if (current->data[foo] & 0x80);
-	    else if (current->data[foo] < 32)
-		current_x--;
-	    foo++;
+	do_mark();
+    } else if (mevent.y > current_y) {
+	while (mevent.y > current_y) {
+	    if (current->next != NULL)
+		current = current->next;
+	    else
+		break;
+	    current_y++;
 	}
-	/* This is where tab_found comes in.  I can't figure out why,
-	 * but without it any line with a tab will place the cursor
-	 * one character behind.  Whatever, this fixes it. */
-	if (tab_found == 1)
-	    current_x++;
-
-	if (current_x > strlen(current->data))
-	    current_x = strlen(current->data);
-
-	update_cursor();
-	edit_refresh();
-    } else if (wenclose(bottomwin, mevent.y, mevent.x) && !ISSET(NO_HELP)) {
-	int k = COLS / 6, val = 0;
-
-	/* Determine what shortcut list was clicked */
-	mevent.y -= (editwinrows + 3);
-
-	if (mevent.y < 0) /* They clicked on the statusbar */
-	    return;
-
-	/* Don't select stuff beyond list length */
-	if (mevent.x / k >= currslen)	
-	    return;
-
-	val = currshortcut[(mevent.x / k) * 2 + mevent.y].val;
-
-	/* And ungetch that value */
-	ungetch(val);
+    } else if (mevent.y < current_y) {
+	while (mevent.y < current_y) {
+	    if (current->prev != NULL)
+		current = current->prev;
+	    else
+		break;
+	    current_y--;
+	}
     }
+    current_x = mevent.x;
+    placewewant = current_x;
+    while (foo < current_x) {
+	if (current->data[foo] == NANO_CONTROL_I) {
+	    current_x -= tabsize - (foo % tabsize);
+	    tab_found = 1;
+	} else if (current->data[foo] & 0x80);
+	else if (current->data[foo] < 32)
+	    current_x--;
+	foo++;
+    }
+    /* This is where tab_found comes in.  I can't figure out why,
+     * but without it any line with a tab will place the cursor
+     * one character behind.  Whatever, this fixes it. */
+    if (tab_found == 1)
+	current_x++;
+
+    if (current_x > strlen(current->data))
+	current_x = strlen(current->data);
+
+    update_cursor();
+    edit_refresh();
+
 }
 #endif
 #endif
@@ -1769,11 +1746,10 @@ void window_init(void)
 
 void mouse_init(void)
 {
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
     if (ISSET(USE_MOUSE)) {
 	keypad_on(edit, 1);
-	keypad_on(bottomwin, 1);
 
 	mousemask(BUTTON1_RELEASED, NULL);
 	mouseinterval(50);
@@ -1888,7 +1864,7 @@ int do_justify(void)
     initial_y = current_y;
 
     set_modified();
-    cutbak = cutbuffer;		/* Got to like cutbak ;) */
+    cutbak = cutbuffer; /* Got to like cutbak ;) */
     totbak = totsize;
     cutbuffer = NULL;
 
@@ -1910,7 +1886,7 @@ int do_justify(void)
 	add_to_cutbuffer(tmpjust);
 
 	/* Wiping out a newline */
-	totsize--;
+        totsize--;
 
 	/* length of both strings plus space between strings and ending \0. */
 	current->data = nrealloc(current->data, len + len2 + 2);
@@ -2008,7 +1984,7 @@ int do_justify(void)
     /* Now get a keystroke and see if it's unjustify, if not unget the keytroke 
        and return */
     if ((kbinput = wgetch(edit)) != NANO_UNJUSTIFY_KEY) {
-	ungetch(kbinput);
+	ungetch(kbinput); 
 	blank_statusbar_refresh();
     } else {
 	/* Else restore the justify we just did (ungrateful user!) */
@@ -2017,7 +1993,7 @@ int do_justify(void)
 	else
 	    fileage = current;
 	tmpbot->next->prev = tmptop->prev;
-	current = tmpbot->next;
+ 	current = tmpbot->next;
 	tmpbot->next = NULL;
 	do_uncut_text();
 	if (tmptop->prev == NULL)
@@ -2032,7 +2008,7 @@ int do_justify(void)
     display_main_list();
     free_filestruct(cutbuffer);
     cutbuffer = cutbak;
-
+    
     return 1;
 #endif
 }
@@ -2165,8 +2141,7 @@ void print_numlock_warning(void)
 {
     static int didmsg = 0;
     if (!didmsg) {
-	statusbar(_
-		  ("NumLock glitch detected.  Keypad will malfunction with NumLock off"));
+	statusbar(_("NumLock glitch detected.  Keypad will malfunction with NumLock off"));
 	didmsg = 1;
     }
 }
@@ -2176,17 +2151,18 @@ void print_numlock_warning(void)
    Esc-O-[A-D] or Esc-[-[A-D]. */
 int ABCD(int input)
 {
-    switch (input) {
-    case 'A':
-	return (KEY_UP);
-    case 'B':
-	return (KEY_DOWN);
-    case 'C':
-	return (KEY_RIGHT);
-    case 'D':
-	return (KEY_LEFT);
-    default:
-	return 0;
+    switch(input)
+    {                
+	case 'A':
+	    return(KEY_UP);
+	case 'B':
+	    return(KEY_DOWN);
+	case 'C':
+	    return(KEY_RIGHT);
+	case 'D': 
+	    return(KEY_LEFT);
+	default:
+	    return 0;
     }
 }
 
@@ -2243,16 +2219,11 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-#ifdef ENABLE_NANORC
-    do_rcfile();
-#endif /* ENABLE_NANORC */
-
 #ifdef HAVE_GETOPT_LONG
-    while ((optchr = getopt_long(argc, argv, "?T:RVbcefghijklmpr:s:tvwxz",
+    while ((optchr = getopt_long(argc, argv, "?T:RVbcefhiklmpr:s:tvwxz",
 				 long_options, &option_index)) != EOF) {
 #else
-    while ((optchr =
-	    getopt(argc, argv, "h?T:RVbcefgijklmpr:s:tvwxz")) != EOF) {
+    while ((optchr = getopt(argc, argv, "h?T:RVbcefiklmpr:s:tvwxz")) != EOF) {
 #endif
 
 	switch (optchr) {
@@ -2274,10 +2245,8 @@ int main(int argc, char *argv[])
 	case 'b':
 	case 'e':
 	case 'f':
-	case 'g':
-	case 'j':
-	    /* Pico compatibility flags */
-	    break;
+		/* Pico compatibility flags */
+		break;
 	case 'c':
 	    SET(CONSTUPDATE);
 	    break;
@@ -2328,7 +2297,7 @@ int main(int argc, char *argv[])
 #else
 	    SET(NO_WRAP);
 	    break;
-#endif				/* DISABLE_WRAPPING */
+#endif /* DISABLE_WRAPPING */
 	case 'x':
 	    SET(NO_HELP);
 	    break;
@@ -2425,7 +2394,7 @@ int main(int argc, char *argv[])
 	edit_update(fileage, CENTER);
 
     /* return here after a sigwinch */
-    sigsetjmp(jmpbuf, 1);
+    sigsetjmp(jmpbuf,1);
 
     /* Fix clobber-age */
     kbinput = 0;
@@ -2436,9 +2405,6 @@ int main(int argc, char *argv[])
     reset_cursor();
 
     while (1) {
-
-	currshortcut = main_list;
-	currslen = MAIN_VISIBLE;
 
 #ifndef _POSIX_VDISABLE
 	/* We're going to have to do it the old way, i.e. on cygwin */
@@ -2455,7 +2421,7 @@ int main(int argc, char *argv[])
 	    case 79:
 		kbinput = wgetch(edit);
 		if (kbinput <= 'D' && kbinput >= 'A')
-		    kbinput = ABCD(kbinput);
+		   kbinput = ABCD(kbinput);
 		else if (kbinput <= 'z' && kbinput >= 'j')
 		    print_numlock_warning();
 		else if (kbinput <= 'S' && kbinput >= 'P')
@@ -2636,7 +2602,7 @@ int main(int argc, char *argv[])
 	/* Last gasp, stuff that's not in the main lists */
 	if (!keyhandled)
 	    switch (kbinput) {
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
 	    case KEY_MOUSE:
 		do_mouse();
