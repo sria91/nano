@@ -62,17 +62,18 @@
 #include <getopt.h>
 #endif
 
-#ifndef DISABLE_WRAPJUSTIFY
 /* Former globals, now static */
 int fill = 0;			/* Fill - where to wrap lines, basically */
-int wrap_at = 0;		/* Right justified fill value, allows resize */
+
+#ifndef DISABLE_SPELLER
+static char *alt_speller;	/* Alternative spell command */
 #endif
 
 struct termios oldterm;		/* The user's original term settings */
 static struct sigaction act;	/* For all our fun signal handlers */
 
 #ifndef DISABLE_HELP
-static char *help_text_init = "";	/* Initial message, not including shortcuts */
+static char *help_text_init = ""; /* Initial message, not including shortcuts */
 #endif
 
 char *last_search = NULL;	/* Last string we searched for */
@@ -93,7 +94,7 @@ RETSIGTYPE finish(int sigage)
 	mvwaddstr(bottomwin, 2, 0, hblank);
     } else
 	mvwaddstr(bottomwin, 0, 0, hblank);
-
+    
     wrefresh(bottomwin);
     endwin();
 
@@ -107,11 +108,26 @@ RETSIGTYPE finish(int sigage)
 void die(char *msg, ...)
 {
     va_list ap;
+    char *name;
+    int i;
 
     va_start(ap, msg);
     vfprintf(stderr, msg, ap);
     va_end(ap);
 
+    /* if we can't save we have REAL bad problems,
+     * but we might as well TRY. */
+    if (filename[0] == '\0') {
+	name = "nano.save";
+	i = write_file(name, 1);
+    } else {
+	
+	char *buf = nmalloc(strlen(filename) + 6);
+	strcpy(buf, filename);
+	strcat(buf, ".save");
+	i = write_file(buf, 1);
+	name = buf;
+    }
     /* Restore the old term settings */
     tcsetattr(0, TCSANOW, &oldterm);
 
@@ -121,62 +137,12 @@ void die(char *msg, ...)
     endwin();
 
     fprintf(stderr, msg);
-
-    /* save the currently loaded file (if modified, its open_files entry
-       isn't up to date) */
-    die_save_file(filename);
-
-#ifdef ENABLE_MULTIBUFFER
-    /* then save all of the other loaded files, if any */
-    if (open_files) {
-        filestruct *tmp;
-
-	tmp = open_files;
-
-	while (open_files->prev)
-	    open_files = open_files->prev;
-
-	while (open_files->next) {
-
-	    /* if we already saved the file above (i. e. if it was the
-	       currently loaded file), don't save it again */
-	    if (tmp != open_files) {
-		fileage = open_files->file;
-		die_save_file(open_files->data);
-	    }
-
-	    open_files = open_files->next;
-	}
-
-    }
-#endif
-
-    exit(1);			/* We have a problem: exit w/ errorlevel(1) */
-}
-
-void die_save_file(char *die_filename)
-{
-    char *name;
-    int i;
-
-    /* if we can't save we have REAL bad problems,
-     * but we might as well TRY. */
-    if (die_filename[0] == '\0') {
-	name = "nano.save";
-	i = write_file(name, 1, 0, 0);
-    } else {
-
-	char *buf = charalloc(strlen(die_filename) + 6);
-	strcpy(buf, die_filename);
-	strcat(buf, ".save");
-	i = write_file(buf, 1, 0, 0);
-	name = buf;
-    }
-
     if (i != -1)
 	fprintf(stderr, _("\nBuffer written to %s\n"), name);
     else
 	fprintf(stderr, _("\nNo %s written (file exists?)\n"), name);
+
+    exit(1);			/* We have a problem: exit w/ errorlevel(1) */
 }
 
 /* Die with an error message that the screen was too small if, well, the
@@ -198,7 +164,7 @@ void clear_filename(void)
 {
     if (filename != NULL)
 	free(filename);
-    filename = charalloc(1);
+    filename = nmalloc(1);
     filename[0] = 0;
 }
 
@@ -219,17 +185,13 @@ void global_init(void)
     totlines = 0;
     placewewant = 0;
 
-#ifndef DISABLE_WRAPJUSTIFY
-    if (wrap_at)
-	fill = COLS + wrap_at;
-    else if (!fill)
+    if (!fill)
 	fill = COLS - CHARS_FROM_EOL;
 
     if (fill < MIN_FILL_LENGTH)
 	die_too_small();
-#endif
 
-    hblank = charalloc(COLS + 1);
+    hblank = nmalloc(COLS + 1);
     memset(hblank, ' ', COLS);
     hblank[COLS] = 0;
 }
@@ -260,14 +222,13 @@ void init_help_msg(void)
 }
 #endif
 
-/* Make a copy of a node to a pointer (space will be malloc()ed).  This
-   does NOT copy the data members used only by open_files. */
+/* Make a copy of a node to a pointer (space will be malloc()ed) */
 filestruct *copy_node(filestruct * src)
 {
     filestruct *dst;
 
     dst = nmalloc(sizeof(filestruct));
-    dst->data = charalloc(strlen(src->data) + 1);
+    dst->data = nmalloc(strlen(src->data) + 1);
 
     dst->next = src->next;
     dst->prev = src->prev;
@@ -288,20 +249,17 @@ void unlink_node(filestruct * fileptr)
 	fileptr->next->prev = fileptr->prev;
 }
 
-/* Delete a node from the struct.  This does NOT delete the data members
-   used only by open_files. */
 void delete_node(filestruct * fileptr)
 {
     if (fileptr == NULL)
 	return;
 
     if (fileptr->data != NULL)
-	free(fileptr->data);
+        free(fileptr->data);
     free(fileptr);
 }
 
-/* Okay, now let's duplicate a whole struct!  This does NOT duplicate the
-   data members used only by open_files. */
+/* Okay, now let's duplicate a whole struct! */
 filestruct *copy_filestruct(filestruct * src)
 {
     filestruct *dst, *tmp, *head, *prev;
@@ -325,8 +283,6 @@ filestruct *copy_filestruct(filestruct * src)
     return head;
 }
 
-/* Frees a struct.  This does NOT free the data members used only by
-   open_files. */
 int free_filestruct(filestruct * src)
 {
     filestruct *fileptr = src;
@@ -401,13 +357,6 @@ void usage(void)
 #ifdef HAVE_GETOPT_LONG
     printf(_("Usage: nano [GNU long option] [option] +LINE <file>\n\n"));
     printf(_("Option		Long option		Meaning\n"));
-
-#ifdef ENABLE_MULTIBUFFER
-    printf
-	(_
-	 (" -F 		--multibuffer		Enable multiple file buffers\n"));
-#endif
-
     printf(_
 	   (" -T [num]	--tabsize=[num]		Set width of a tab to num\n"));
 #ifdef HAVE_REGEX_H
@@ -429,19 +378,16 @@ void usage(void)
 #endif
     printf(_
 	   (" -l 		--nofollow		Don't follow symbolic links, overwrite\n"));
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
     printf(_(" -m 		--mouse			Enable mouse\n"));
 #endif
 #endif
     printf(_
 	   (" -p	 	--pico			Emulate Pico as closely as possible\n"));
-
-#ifndef DISABLE_WRAPJUSTIFY
     printf
 	(_
 	 (" -r [#cols] 	--fill=[#cols]		Set fill cols to (wrap lines at) #cols\n"));
-#endif
 #ifndef DISABLE_SPELLER
     printf(_
 	   (" -s [prog] 	--speller=[prog]	Enable alternate speller\n"));
@@ -463,9 +409,6 @@ void usage(void)
 #else
     printf(_("Usage: nano [option] +LINE <file>\n\n"));
     printf(_("Option		Meaning\n"));
-#ifdef ENABLE_MULTIBUFFER
-    printf(_(" -F 		Enable multiple file buffers\n"));
-#endif
     printf(_(" -T [num]	Set width of a tab to num\n"));
     printf(_(" -R		Use regular expressions for search\n"));
     printf(_(" -V 		Print version information and exit\n"));
@@ -477,17 +420,13 @@ void usage(void)
 #endif
     printf(_
 	   (" -l 		Don't follow symbolic links, overwrite\n"));
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
     printf(_(" -m 		Enable mouse\n"));
 #endif
 #endif
     printf(_(" -p 		Emulate Pico as closely as possible\n"));
-
-#ifndef DISABLE_WRAPJUSTIFY
-    printf(_
-	   (" -r [#cols] 	Set fill cols to (wrap lines at) #cols\n"));
-#endif
+    printf(_(" -r [#cols] 	Set fill cols to (wrap lines at) #cols\n"));
 #ifndef DISABLE_SPELLER
     printf(_(" -s [prog]  	Enable alternate speller\n"));
 #endif
@@ -513,41 +452,27 @@ void version(void)
 
 #ifdef NANO_EXTRA
     printf(" --enable-extra");
-#else
-#ifdef ENABLE_MULTIBUFFER
-    printf(" --enable-multibuffer");
-#endif /* ENABLE_MULTIBUFFER */
-#endif /* NANO_EXTRA */
-
-#ifdef ENABLE_NANORC
-    printf(" --enable-nanorc");
-#endif
-#ifdef ENABLE_COLOR
-    printf(" --enable-color");
 #endif
 
 #ifdef NANO_SMALL
     printf(" --enable-tiny");
 #else
-#ifdef DISABLE_BROWSER
+ #ifdef DISABLE_BROWSER
     printf(" --disable-browser");
-#endif
-#ifdef DISABLE_TABCOMP
+ #endif
+ #ifdef DISABLE_TABCOMP
     printf(" --disable-tabcomp");
-#endif
-#ifdef DISABLE_JUSTIFY
+ #endif
+ #ifdef DISABLE_JUSTIFY
     printf(" --disable-justify");
-#endif
-#ifdef DISABLE_SPELLER
+ #endif
+ #ifdef DISABLE_SPELLER
     printf(" --disable-speller");
-#endif
-#ifdef DISABLE_HELP
+ #endif
+ #ifdef DISABLE_HELP
     printf(" --disable-help");
+ #endif
 #endif
-#ifdef DISABLE_MOUSE
-    printf(" --disable-mouse");
-#endif
-#endif /* NANO_SMALL */
 
 #ifdef DISABLE_WRAPPING
     printf(" --disable-wrapping");
@@ -559,8 +484,6 @@ void version(void)
 
 }
 
-/* Create a new node.  This does NOT initialize the data members used
-   only by open_files. */
 filestruct *make_new_node(filestruct * prevnode)
 {
     filestruct *newnode;
@@ -577,10 +500,8 @@ filestruct *make_new_node(filestruct * prevnode)
     return newnode;
 }
 
-/* Splice a node into an existing filestruct.  This does NOT set the data
-   members used only by open_files. */
-void splice_node(filestruct * begin, filestruct * newnode,
-		 filestruct * end)
+/* Splice a node into an existing filestruct */
+void splice_node(filestruct * begin, filestruct * newnode, filestruct * end)
 {
     newnode->next = end;
     newnode->prev = begin;
@@ -608,7 +529,6 @@ int do_mark(void)
 	edit_refresh();
     }
 #endif
-    SET(DISABLE_CURPOS);
     return 1;
 }
 
@@ -679,12 +599,12 @@ int do_enter(filestruct * inptr)
 		current_x++;
 		totsize++;
 	    }
-	    newnode->data = charalloc(strlen(tmp) + extra + 1);
+	    newnode->data = nmalloc(strlen(tmp) + extra + 1);
 	    strncpy(newnode->data, current->data, extra);
 	    strcpy(&newnode->data[extra], tmp);
 	}
     } else {
-	newnode->data = charalloc(strlen(tmp) + 1);
+	newnode->data = nmalloc(strlen(tmp) + 1);
 	strcpy(newnode->data, tmp);
     }
     *tmp = 0;
@@ -882,7 +802,7 @@ void do_wrap(filestruct * inptr, char input_char)
 	    down = 1;
 	}
 
-	temp->data = charalloc(strlen(&inptr->data[current_word_start]) + 1);
+	temp->data = nmalloc(strlen(&inptr->data[current_word_start]) + 1);
 	strcpy(temp->data, &inptr->data[current_word_start]);
 	inptr->data = nrealloc(inptr->data, last_word_end + 2);
 	inptr->data[last_word_end + 1] = 0;
@@ -890,7 +810,7 @@ void do_wrap(filestruct * inptr, char input_char)
 	/* Category 1b: one word on the line and word not taking up whole line
 	   (i.e. there are spaces at the beginning of the line) */
     if (last_word_end == -1) {
-	temp->data = charalloc(strlen(&inptr->data[current_word_start]) + 1);
+	temp->data = nmalloc(strlen(&inptr->data[current_word_start]) + 1);
 	strcpy(temp->data, &inptr->data[current_word_start]);
 
 	/* Inside word, remove it from original, and move cursor to right spot. */
@@ -899,11 +819,11 @@ void do_wrap(filestruct * inptr, char input_char)
 	    current_x = 0;
 	    if (ISSET(AUTOINDENT)) {
 		int i = 0;
-		while ((inptr->next->data[i] == ' '
-			|| inptr->next->data[i] == '\t')) {
+		while ((inptr->next->data[i] == ' ' 
+	    		|| inptr->next->data[i] == '\t')) {
 		    i++;
 		    right++;
-		}
+		}			
 	    }
 	    down = 1;
 	}
@@ -921,7 +841,7 @@ void do_wrap(filestruct * inptr, char input_char)
 	/* Case 2a: cursor before word at wrap point. */
 	if (current_x < current_word_start) {
 	    temp->data =
-		charalloc(strlen(&inptr->data[current_word_start]) + 1);
+		nmalloc(strlen(&inptr->data[current_word_start]) + 1);
 	    strcpy(temp->data, &inptr->data[current_word_start]);
 
 	    if (!isspace((int) input_char)) {
@@ -944,7 +864,7 @@ void do_wrap(filestruct * inptr, char input_char)
 	else if ((current_x >= current_word_start)
 		 && (current_x <= (current_word_end + 1))) {
 	    temp->data =
-		charalloc(strlen(&inptr->data[current_word_start]) + 1);
+		nmalloc(strlen(&inptr->data[current_word_start]) + 1);
 	    strcpy(temp->data, &inptr->data[current_word_start]);
 
 	    down = 1;
@@ -952,11 +872,11 @@ void do_wrap(filestruct * inptr, char input_char)
 	    right = current_x - current_word_start;
 	    if (ISSET(AUTOINDENT)) {
 		int i = 0;
-		while ((inptr->next->data[i] == ' '
-			|| inptr->next->data[i] == '\t')) {
+		while ((inptr->next->data[i] == ' ' 
+	    		|| inptr->next->data[i] == '\t')) {
 		    i++;
 		    right++;
-		}
+		}			
 	    }
 
 	    i = current_word_start - 1;
@@ -980,7 +900,7 @@ void do_wrap(filestruct * inptr, char input_char)
 	/* Case 2c: cursor past word at wrap point. */
 	else {
 	    temp->data =
-		charalloc(strlen(&inptr->data[current_word_start]) + 1);
+		nmalloc(strlen(&inptr->data[current_word_start]) + 1);
 	    strcpy(temp->data, &inptr->data[current_word_start]);
 
 	    down = 1;
@@ -1003,26 +923,25 @@ void do_wrap(filestruct * inptr, char input_char)
 	int old_x = current_x, old_y = current_y;
 
 	/* Plus one for the space which concatenates the two lines together plus 1 for \0. */
-	char *p =
-	    charalloc((strlen(temp->data) + strlen(inptr->next->data) + 2));
+	char *p = nmalloc((strlen(temp->data) + strlen(inptr->next->data) + 2) 
+			* sizeof(char));
 
 	if (ISSET(AUTOINDENT)) {
 	    int non = 0;
 
-	    /* Grab the beginning of the next line until it's not a 
-	       space or tab, then null terminate it so we can strcat it
-	       to hell */
-	    while ((inptr->next->data[non] == ' '
-		    || inptr->next->data[non] == '\t')) {
-		p[non] = inptr->next->data[non];
-		non++;
-	    }
+	     /* Grab the beginning of the next line until it's not a 
+		space or tab, then null terminate it so we can strcat it
+		to hell */
+	    while ((inptr->next->data[non] == ' ' 
+	    	|| inptr->next->data[non] == '\t'))
+	    	    p[non] = inptr->next->data[non++];
+
 	    p[non] = 0;
 	    strcat(p, temp->data);
 	    strcat(p, " ");
 
-	    /* Now tack on the rest of the next line after the spaces and
-	       tabs */
+	     /* Now tack on the rest of the next line after the spaces and
+		tabs */
 	    strcat(p, &inptr->next->data[non]);
 	} else {
 	    strcpy(p, temp->data);
@@ -1059,12 +978,12 @@ void do_wrap(filestruct * inptr, char input_char)
 	    char *t = NULL;
 	    int extra = 0;
 	    if (spc) {
-		while ((*spc == ' ') || (*spc == '\t')) {
+	        while ((*spc == ' ') || (*spc == '\t')) {
 		    extra++;
 		    spc++;
 		    totsize++;
 		}
-		t = charalloc(strlen(temp->data) + extra + 1);
+		t = nmalloc(strlen(temp->data) + extra + 1);
 		strncpy(t, inptr->data, extra);
 		strcpy(t + extra, temp->data);
 		free(temp->data);
@@ -1078,7 +997,7 @@ void do_wrap(filestruct * inptr, char input_char)
     /* Everything about it makes me want this line here, but it causes
      * totsize to be high by one for some reason.  Sigh. (Rob) */
     /* totsize++; */
-
+	
     renumber(inptr);
     edit_update(edittop, TOP);
 
@@ -1136,7 +1055,7 @@ void check_wrap(filestruct * inptr, char ch)
 	    do_wrap(inptr, ch);
     }
 }
-#endif				/* DISABLE_WRAPPING */
+#endif /* DISABLE_WRAPPING */
 
 /* Stuff we do when we abort from programs and want to clean up the
  * screen.  This doesn't do much right now.
@@ -1230,8 +1149,8 @@ int do_delete(void)
 
 	align(&current->data);
 
-	/* Now that we have a magic lnie again, we can check for both being
-	   on the line before filebot as well as at filebot */
+    /* Now that we have a magic line again, we can check for both being
+       on the line before filebot as well as at filebot */
     } else if (current->next != NULL && current->next != filebot) {
 	current->data = nrealloc(current->data,
 				 strlen(current->data) +
@@ -1303,12 +1222,13 @@ int do_int_spell_fix(char *word)
     edit_update(fileage, TOP);
 
     /* make sure word is still mis-spelt (i.e. when multi-errors) */
-    if (findnextstr(TRUE, fileage, beginx_top, prevanswer) != NULL) {
+    if (findnextstr(TRUE, fileage, beginx_top, prevanswer) != NULL)
+    {
 	do_replace_highlight(TRUE, prevanswer);
 
 	/* allow replace word to be corrected */
-	i = statusq(0, spell_list, SPELL_LIST_LEN, last_replace,
-		    _("Edit a replacement"));
+	i = statusq(0, spell_list, SPELL_LIST_LEN, last_replace, 
+		_("Edit a replacement"));
 
 	do_replace_highlight(FALSE, prevanswer);
 
@@ -1355,7 +1275,7 @@ int do_int_speller(char *tempfile_name)
 
     /* A new process to run spell in */
 
-    if ((pid_spell = fork()) == 0) {
+    if ( (pid_spell = fork()) == 0) {
 
 	/* Child continues, (i.e. future spell process) */
 
@@ -1363,7 +1283,7 @@ int do_int_speller(char *tempfile_name)
 
 	/* replace the standard in with the tempfile */
 
-	if ((tempfile_fd = open(tempfile_name, O_RDONLY)) == -1) {
+	if ( (tempfile_fd = open(tempfile_name, O_RDONLY)) == -1) {
 
 	    close(in_fd[1]);
 	    exit(1);
@@ -1387,7 +1307,7 @@ int do_int_speller(char *tempfile_name)
 	}
 	close(in_fd[1]);
 
-	/* Start spell program, we are using the PATH here!?!? */
+	/* Start spell program; we are using the PATH here!?!? */
 	execlp("spell", "spell", NULL);
 
 	/* Should not be reached, if spell is found!!! */
@@ -1409,17 +1329,17 @@ int do_int_speller(char *tempfile_name)
 
     /* Get system pipe buffer size */
 
-    if ((pipe_buff_size = fpathconf(in_fd[0], _PC_PIPE_BUF)) < 1) {
+    if ( (pipe_buff_size = fpathconf(in_fd[0], _PC_PIPE_BUF)) < 1) {
 
 	close(in_fd[0]);
 	return FALSE;
     }
 
-    read_buff = charalloc(pipe_buff_size + 1);
+    read_buff = nmalloc( pipe_buff_size + 1 );
 
     /* Process the returned spelling errors */
 
-    while ((bytesread = read(in_fd[0], read_buff, pipe_buff_size)) > 0) {
+    while ( (bytesread = read(in_fd[0], read_buff, pipe_buff_size)) > 0) {
 
 	read_buff[bytesread] = (char) NULL;
 	read_buff_word = read_buff_ptr = read_buff;
@@ -1432,14 +1352,14 @@ int do_int_speller(char *tempfile_name)
 
 	    if (*read_buff_ptr == '\n') {
 		*read_buff_ptr = (char) NULL;
-		if (!do_int_spell_fix(read_buff_word)) {
+		if (!do_int_spell_fix(read_buff_word)) { 
 
 		    close(in_fd[0]);
 		    free(read_buff);
 		    replace_abort();
 
 		    return TRUE;
-		}
+	        }
 		read_buff_word = read_buff_ptr;
 		read_buff_word++;
 	    }
@@ -1458,7 +1378,8 @@ int do_int_speller(char *tempfile_name)
     if (WIFEXITED(spell_status)) {
 	if (WEXITSTATUS(spell_status) != 0)
 	    return FALSE;
-    } else
+    }
+    else
 	return FALSE;
 
     return TRUE;
@@ -1491,9 +1412,9 @@ int do_alt_speller(char *file_name)
     spellargs[arglen - 2] = file_name;
 
     /* Start a new process for the alternate speller */
-    if ((pid_spell = fork()) == 0) {
+    if ( (pid_spell = fork()) == 0) {
 
-	/* Start alternate spell program; we are using the PATH here!?!? */
+	/* Start alternate spell program, we are using the PATH here!?!? */
 	execvp(spellargs[0], spellargs);
 
 	/* Should not be reached, if alternate speller is found!!! */
@@ -1512,7 +1433,8 @@ int do_alt_speller(char *file_name)
     if (WIFEXITED(alt_spell_status)) {
 	if (WEXITSTATUS(alt_spell_status) != 0)
 	    return FALSE;
-    } else
+    }
+    else
 	return FALSE;
 
     refresh();
@@ -1520,16 +1442,8 @@ int do_alt_speller(char *file_name)
     global_init();
     open_file(file_name, 0, 1);
 
-    do_gotoline(lineno_cur, 0);
+    do_gotoline(lineno_cur);
     set_modified();
-
-#ifdef ENABLE_MULTIBUFFER
-    /* if we have multiple files open, the spell-checked (current) file
-       is now stored after the un-spell-checked file in the open_files
-       structure, so go back to the un-spell-checked file and close it */
-    open_prevfile(0);
-    close_open_file();
-#endif
 
     return TRUE;
 }
@@ -1547,11 +1461,11 @@ int do_spell(void)
 
     if ((temp = tempnam(0, "nano.")) == NULL) {
 	statusbar(_("Could not create a temporary filename: %s"),
-		  strerror(errno));
+			strerror(errno));
 	return 0;
     }
 
-    if (write_file(temp, 1, 0, 0) == -1) {
+    if (write_file(temp, 1) == -1) {
 	statusbar(_("Spell checking failed: unable to write temp file!"));
 	return 0;
     }
@@ -1577,23 +1491,14 @@ int do_exit(void)
 {
     int i;
 
-    if (!ISSET(MODIFIED)) {
-
-#ifdef ENABLE_MULTIBUFFER
-	if (!close_open_file()) {
-	    display_main_list();
-	    return 1;
-	}
-	else
-#endif
-
-	    finish(0);
-    }
+    if (!ISSET(MODIFIED))
+	finish(0);
 
     if (ISSET(TEMP_OPT)) {
 	i = 1;
     } else {
-	i = do_yesno(0, 0,
+	i =
+	    do_yesno(0, 0,
 		     _
 		     ("Save modified buffer (ANSWERING \"No\" WILL DESTROY CHANGES) ? "));
     }
@@ -1603,37 +1508,18 @@ int do_exit(void)
 #endif
 
     if (i == 1) {
-	if (do_writeout(filename, 1, 0) > 0) {
-
-#ifdef ENABLE_MULTIBUFFER
-	    if (!close_open_file()) {
-		display_main_list();
-		return 1;
-	    }
-	    else
-#endif
-
-		finish(0);
-	}
-    } else if (i == 0) {
-
-#ifdef ENABLE_MULTIBUFFER
-	if (!close_open_file()) {
-	    display_main_list();
-	    return 1;
-	}
-	else
-#endif
-
+	if (do_writeout(filename, 1) > 0)
 	    finish(0);
-    } else
+    } else if (i == 0)
+	finish(0);
+    else
 	statusbar(_("Cancelled"));
 
     display_main_list();
     return 1;
 }
 
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
 void do_mouse(void)
 {
@@ -1643,87 +1529,66 @@ void do_mouse(void)
     if (getmouse(&mevent) == ERR)
 	return;
 
-    /* If mouse not in edit or bottom window, return */
-    if (wenclose(edit, mevent.y, mevent.x)) {
+    /* If mouse not in edit window, return (add help selection later). */
+    if (!wenclose(edit, mevent.y, mevent.x))
+	return;
 
-	/* Don't let people screw with the marker when they're in a
-	   subfunction */
-	if (currshortcut != main_list)
+    /* Subtract out size of topwin.  Perhaps we need a constant somewhere? */
+    mevent.y -= 2;
+
+    /* Selecting where the cursor is sets the mark.
+     * Selecting beyond the line length with the cursor at the end of the
+     * line sets the mark as well. 
+     */
+    if ((mevent.y == current_y) &&
+	((mevent.x == current_x) || (current_x == strlen(current->data)
+				     && (mevent.x >
+					 strlen(current->data))))) {
+	if (ISSET(VIEW_MODE)) {
+	    print_view_warning();
 	    return;
-
-	/* Subtract out size of topwin.  Perhaps we need a constant somewhere? */
-	mevent.y -= 2;
-
-	/* Selecting where the cursor is sets the mark.
-	 * Selecting beyond the line length with the cursor at the end of the
-	 * line sets the mark as well. 
-	 */
-	if ((mevent.y == current_y) &&
-	    ((mevent.x == current_x) || (current_x == strlen(current->data)
-					 && (mevent.x >
-					     strlen(current->data))))) {
-	    if (ISSET(VIEW_MODE)) {
-		print_view_warning();
-		return;
-	    }
-	    do_mark();
-	} else if (mevent.y > current_y) {
-	    while (mevent.y > current_y) {
-		if (current->next != NULL)
-		    current = current->next;
-		else
-		    break;
-		current_y++;
-	    }
-	} else if (mevent.y < current_y) {
-	    while (mevent.y < current_y) {
-		if (current->prev != NULL)
-		    current = current->prev;
-		else
-		    break;
-		current_y--;
-	    }
 	}
-	current_x = mevent.x;
-	placewewant = current_x;
-	while (foo < current_x) {
-	    if (current->data[foo] == NANO_CONTROL_I) {
-		current_x -= tabsize - (foo % tabsize);
-		tab_found = 1;
-	    } else if (current->data[foo] & 0x80);
-	    else if (current->data[foo] < 32)
-		current_x--;
-	    foo++;
+	do_mark();
+    } else if (mevent.y > current_y) {
+	while (mevent.y > current_y) {
+	    if (current->next != NULL)
+		current = current->next;
+	    else
+		break;
+	    current_y++;
 	}
-	/* This is where tab_found comes in.  I can't figure out why,
-	 * but without it any line with a tab will place the cursor
-	 * one character behind.  Whatever, this fixes it. */
-	if (tab_found == 1)
-	    current_x++;
-
-	if (current_x > strlen(current->data))
-	    current_x = strlen(current->data);
-
-	update_cursor();
-	edit_refresh();
-    } else if (wenclose(bottomwin, mevent.y, mevent.x) && !ISSET(NO_HELP)) {
-	int k = COLS / 6, val = 0;
-
-	/* Determine what shortcut list was clicked */
-	mevent.y -= (editwinrows + 3);
-
-	if (mevent.y < 0) /* They clicked on the statusbar */
-	    return;
-
-	/* Don't select stuff beyond list length */
-	if (mevent.x / k >= currslen)	
-	    return;
-
-	val = currshortcut[(mevent.x / k) * 2 + mevent.y].val;
-
-	/* And ungetch that value */
-	ungetch(val);
+    } else if (mevent.y < current_y) {
+	while (mevent.y < current_y) {
+	    if (current->prev != NULL)
+		current = current->prev;
+	    else
+		break;
+	    current_y--;
+	}
     }
+    current_x = mevent.x;
+    placewewant = current_x;
+    while (foo < current_x) {
+	if (current->data[foo] == NANO_CONTROL_I) {
+	    current_x -= tabsize - (foo % tabsize);
+	    tab_found = 1;
+	} else if (current->data[foo] & 0x80);
+	else if (current->data[foo] < 32)
+	    current_x--;
+	foo++;
+    }
+    /* This is where tab_found comes in.  I can't figure out why,
+     * but without it any line with a tab will place the cursor
+     * one character behind.  Whatever, this fixes it. */
+    if (tab_found == 1)
+	current_x++;
+
+    if (current_x > strlen(current->data))
+	current_x = strlen(current->data);
+
+    update_cursor();
+    edit_refresh();
+
 }
 #endif
 #endif
@@ -1782,10 +1647,8 @@ void handle_sigwinch(int s)
     if ((editwinrows = LINES - 5 + no_help()) < MIN_EDITOR_ROWS)
 	die_too_small();
 
-#ifndef DISABLE_WRAPJUSTIFY
     if ((fill = COLS - CHARS_FROM_EOL) < MIN_FILL_LENGTH)
 	die_too_small();
-#endif
 
     hblank = nrealloc(hblank, COLS + 1);
     memset(hblank, ' ', COLS);
@@ -1900,11 +1763,10 @@ void window_init(void)
 
 void mouse_init(void)
 {
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
     if (ISSET(USE_MOUSE)) {
 	keypad_on(edit, 1);
-	keypad_on(bottomwin, 1);
 
 	mousemask(BUTTON1_RELEASED, NULL);
 	mouseinterval(50);
@@ -2019,7 +1881,7 @@ int do_justify(void)
     initial_y = current_y;
 
     set_modified();
-    cutbak = cutbuffer;		/* Got to like cutbak ;) */
+    cutbak = cutbuffer; /* Got to like cutbak ;) */
     totbak = totsize;
     cutbuffer = NULL;
 
@@ -2041,7 +1903,7 @@ int do_justify(void)
 	add_to_cutbuffer(tmpjust);
 
 	/* Wiping out a newline */
-	totsize--;
+        totsize--;
 
 	/* length of both strings plus space between strings and ending \0. */
 	current->data = nrealloc(current->data, len + len2 + 2);
@@ -2087,7 +1949,7 @@ int do_justify(void)
 	    current->data[i] = '\0';
 
 	    len2 = strlen(current->data + i + 1);
-	    tmpline->data = charalloc(len2 + 1);
+	    tmpline->data = nmalloc(len2 + 1);
 
 	    /* Skip the white space in current. */
 	    memcpy(tmpline->data, current->data + i + 1, len2);
@@ -2138,21 +2000,8 @@ int do_justify(void)
 
     /* Now get a keystroke and see if it's unjustify; if not, unget the keystroke 
        and return */
-
-#ifndef DISABLE_MOUSE
-#ifdef NCURSES_MOUSE_VERSION
-
-    /* If it was a mouse click, parse it with do_mouse and it might become
-	the unjustify key.  Else give it back to the input stream.  */
-    if ((kbinput = wgetch(edit)) == KEY_MOUSE)
-	do_mouse();
-    else
-	ungetch(kbinput);
-#endif
-#endif
-
     if ((kbinput = wgetch(edit)) != NANO_UNJUSTIFY_KEY) {
-	ungetch(kbinput);
+	ungetch(kbinput); 
 	blank_statusbar_refresh();
     } else {
 	/* Else restore the justify we just did (ungrateful user!) */
@@ -2161,7 +2010,7 @@ int do_justify(void)
 	else
 	    fileage = current;
 	tmpbot->next->prev = tmptop->prev;
-	current = tmpbot->next;
+ 	current = tmpbot->next;
 	tmpbot->next = NULL;
 	do_uncut_text();
 	if (tmptop->prev == NULL)
@@ -2176,7 +2025,7 @@ int do_justify(void)
     display_main_list();
     free_filestruct(cutbuffer);
     cutbuffer = cutbak;
-
+    
     return 1;
 #endif
 }
@@ -2205,7 +2054,7 @@ void help_init(void)
 	free(help_text);
 
     /* Allocate space for the help text */
-    help_text = charalloc(allocsize);
+    help_text = nmalloc(allocsize);
 
     /* Now add the text we want */
     strcpy(help_text, help_text_init);
@@ -2237,21 +2086,12 @@ void help_init(void)
 
     /* And the toggles... */
     for (i = 0; i <= TOGGLE_LEN - 1; i++) {
-	if (toggles[i].override_ch != 0)
-	    sofar = snprintf(buf, BUFSIZ,
-			     "M-%c			", toggles[i].override_ch);
-	else
-	    sofar = snprintf(buf, BUFSIZ,
-			     "M-%c			", toggles[i].val - 32);
+	sofar = snprintf(buf, BUFSIZ,
+			 "M-%c			", toggles[i].val - 32);
 
-	if (toggles[i].desc != NULL) {
-	    if (toggles[i].flag != 0)
-		snprintf(&buf[sofar], BUFSIZ - sofar, _("%s enable/disable"),
-			 toggles[i].desc);
-	    else
-		snprintf(&buf[sofar], BUFSIZ - sofar, "%s",
-			 toggles[i].desc);
-	}
+	if (toggles[i].desc != NULL)
+	    snprintf(&buf[sofar], BUFSIZ - sofar, _("%s enable/disable"),
+		     toggles[i].desc);
 
 	strcat(help_text, buf);
 	strcat(help_text, "\n");
@@ -2268,8 +2108,10 @@ void do_toggle(int which)
     char *enabled = _("enabled");
     char *disabled = _("disabled");
 
-    /* Even easier! */
-    TOGGLE(toggles[which].flag);
+    if (ISSET(toggles[which].flag))
+	UNSET(toggles[which].flag);
+    else
+	SET(toggles[which].flag);
 
     switch (toggles[which].val) {
     case TOGGLE_PICOMODE_KEY:
@@ -2291,7 +2133,6 @@ void do_toggle(int which)
 	edit_refresh();
 	display_main_list();
 	break;
-
     }
 
     if (!ISSET(toggles[which].flag)) {
@@ -2307,7 +2148,6 @@ void do_toggle(int which)
 	else
 	    statusbar("%s %s", toggles[which].desc, enabled);
     }
-
     SET(DISABLE_CURPOS);
 
 #endif
@@ -2319,8 +2159,7 @@ void print_numlock_warning(void)
 {
     static int didmsg = 0;
     if (!didmsg) {
-	statusbar(_
-		  ("NumLock glitch detected.  Keypad will malfunction with NumLock off"));
+	statusbar(_("NumLock glitch detected.  Keypad will malfunction with NumLock off"));
 	didmsg = 1;
     }
 }
@@ -2330,21 +2169,22 @@ void print_numlock_warning(void)
    Esc-O-[A-D] or Esc-[-[A-D]. */
 int ABCD(int input)
 {
-    switch (input) {
-    case 'A':
-    case 'a':
-	return (KEY_UP);
-    case 'B':
-    case 'b':
-	return (KEY_DOWN);
-    case 'C':
-    case 'c':
-	return (KEY_RIGHT);
-    case 'D':
-    case 'd':
-	return (KEY_LEFT);
-    default:
-	return 0;
+    switch(input)
+    {                
+	case 'A':
+	case 'a':
+	    return(KEY_UP);
+	case 'B':
+	case 'b':
+	    return(KEY_DOWN);
+	case 'C':
+	case 'c':
+	    return(KEY_RIGHT);
+	case 'D': 
+	case 'd': 
+	    return(KEY_LEFT);
+	default:
+	    return 0;
     }
 }
 
@@ -2381,19 +2221,11 @@ int main(int argc, char *argv[])
 #ifndef DISABLE_SPELLER
 	{"speller", 1, 0, 's'},
 #endif
-
-#ifndef DISABLE_WRAPJUSTIFY
 	{"fill", 1, 0, 'r'},
-#endif
 	{"mouse", 0, 0, 'm'},
 	{"pico", 0, 0, 'p'},
 	{"nofollow", 0, 0, 'l'},
 	{"tabsize", 1, 0, 'T'},
-
-#ifdef ENABLE_MULTIBUFFER
-	{"multibuffer", 0, 0, 'F'},
-#endif
-
 	{0, 0, 0, 0}
     };
 #endif
@@ -2409,26 +2241,14 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-#ifdef ENABLE_NANORC
-    do_rcfile();
-#endif /* ENABLE_NANORC */
-
 #ifdef HAVE_GETOPT_LONG
-    while ((optchr = getopt_long(argc, argv, "h?FT:RVbcefgijklmpr:s:tvwxz",
+    while ((optchr = getopt_long(argc, argv, "?T:RVbcefhiklmpr:s:tvwxz",
 				 long_options, &option_index)) != EOF) {
 #else
-    while ((optchr =
-	    getopt(argc, argv, "h?FT:RVbcefgijklmpr:s:tvwxz")) != EOF) {
+    while ((optchr = getopt(argc, argv, "h?T:RVbcefiklmpr:s:tvwxz")) != EOF) {
 #endif
 
 	switch (optchr) {
-
-#ifdef ENABLE_MULTIBUFFER
-	case 'F':
-	    SET(MULTIBUFFER);
-	    break;
-#endif
-
 	case 'T':
 	    tabsize = atoi(optarg);
 	    if (tabsize <= 0) {
@@ -2447,10 +2267,8 @@ int main(int argc, char *argv[])
 	case 'b':
 	case 'e':
 	case 'f':
-	case 'g':
-	case 'j':
-	    /* Pico compatibility flags */
-	    break;
+		/* Pico compatibility flags */
+		break;
 	case 'c':
 	    SET(CONSTUPDATE);
 	    break;
@@ -2476,23 +2294,15 @@ int main(int argc, char *argv[])
 	    SET(PICO_MODE);
 	    break;
 	case 'r':
-#ifndef DISABLE_WRAPJUSTIFY
 	    fill = atoi(optarg);
-	    if (fill < 0)
-		wrap_at = fill;
-	    else if (fill == 0) {
+	    if (fill <= 0) {
 		usage();	/* To stop bogus data (like a string) */
 		finish(1);
 	    }
 	    break;
-#else
-	    usage();
-	    exit(0);
-
-#endif
 #ifndef DISABLE_SPELLER
 	case 's':
-	    alt_speller = charalloc(strlen(optarg) + 1);
+	    alt_speller = nmalloc(strlen(optarg) + 1);
 	    strcpy(alt_speller, optarg);
 	    break;
 #endif
@@ -2509,7 +2319,7 @@ int main(int argc, char *argv[])
 #else
 	    SET(NO_WRAP);
 	    break;
-#endif				/* DISABLE_WRAPPING */
+#endif /* DISABLE_WRAPPING */
 	case 'x':
 	    SET(NO_HELP);
 	    break;
@@ -2578,10 +2388,6 @@ int main(int argc, char *argv[])
     fprintf(stderr, _("Main: set up windows\n"));
 #endif
 
-#ifdef ENABLE_COLOR
-    do_colorinit();
-#endif /* ENABLE_COLOR */
-
     window_init();
     mouse_init();
 
@@ -2605,12 +2411,12 @@ int main(int argc, char *argv[])
 	open_file(filename, 0, 0);
 
     if (startline > 0)
-	do_gotoline(startline, 0);
+	do_gotoline(startline);
     else
 	edit_update(fileage, CENTER);
 
     /* return here after a sigwinch */
-    sigsetjmp(jmpbuf, 1);
+    sigsetjmp(jmpbuf,1);
 
     /* Fix clobber-age */
     kbinput = 0;
@@ -2621,11 +2427,6 @@ int main(int argc, char *argv[])
     reset_cursor();
 
     while (1) {
-
-#ifndef DISABLE_MOUSE
-	currshortcut = main_list;
-	currslen = MAIN_VISIBLE;
-#endif
 
 #ifndef _POSIX_VDISABLE
 	/* We're going to have to do it the old way, i.e. on cygwin */
@@ -2641,9 +2442,9 @@ int main(int argc, char *argv[])
 		/* Alt-O, suddenly very important ;) */
 	    case 79:
 		kbinput = wgetch(edit);
-		if ((kbinput <= 'D' && kbinput >= 'A') ||
-			(kbinput <= 'd' && kbinput >= 'a'))
-		    kbinput = ABCD(kbinput);
+		if ((kbinput <= 'D' && kbinput >= 'A') || 
+		    (kbinput <= 'd' && kbinput >= 'a'))
+		   kbinput = ABCD(kbinput);
 		else if (kbinput <= 'z' && kbinput >= 'j')
 		    print_numlock_warning();
 		else if (kbinput <= 'S' && kbinput >= 'P')
@@ -2705,12 +2506,7 @@ int main(int argc, char *argv[])
 			break;
 		    case 126:	/* Hack, make insert key do something 
 				   useful, like insert file */
-#ifdef ENABLE_MULTIBUFFER
-			do_insertfile(ISSET(MULTIBUFFER));
-#else
-			do_insertfile(0);
-#endif
-
+			do_insertfile();
 			keyhandled = 1;
 			break;
 #ifdef DEBUG
@@ -2775,17 +2571,8 @@ int main(int argc, char *argv[])
 		    break;
 		}
 		break;
-#ifdef ENABLE_MULTIBUFFER
-	    case NANO_OPENPREV_KEY:
-		open_prevfile(0);
-		keyhandled = 1;
-		break;
-	    case NANO_OPENNEXT_KEY:
-		open_nextfile(0);
-		keyhandled = 1;
-		break;
-#endif
 	    default:
+
 		/* Check for the altkey defs.... */
 		for (i = 0; i <= MAIN_LIST_LEN - 1; i++)
 		    if (kbinput == main_list[i].altval ||
@@ -2850,7 +2637,7 @@ int main(int argc, char *argv[])
 	/* Last gasp, stuff that's not in the main lists */
 	if (!keyhandled)
 	    switch (kbinput) {
-#ifndef DISABLE_MOUSE
+#ifndef NANO_SMALL
 #ifdef NCURSES_MOUSE_VERSION
 	    case KEY_MOUSE:
 		do_mouse();

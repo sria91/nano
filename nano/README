@@ -1,6 +1,6 @@
 
 	GNU nano - an enhanced clone of the Pico text editor.
-
+                                      
 Overview
 
      The nano project was started because of a few "problems" with the
@@ -53,24 +53,10 @@ Mailing List and Bug Reports
 
 Current Status
 
-	This is the 1.1 or unstable branch of nano.  New features
-	will be added and things will be changed around and basically
-	stabiliity is not guaranteed.  If this is not what you're
-	interested in, please use the latest 1.0.x release of nano.
-
-	New features in this branch include:
-	+ .nanorc file support (--enable-nanorc configure option, 
-	  see sample.nanorc file)
-	+ Negative -r value for "#cols from right", allows dynamic adjustment
-	  of wrap margin based on window size.
-	+ Write marked text to separate file (^O after selecting with ^^).
-	+ Append to file (Meta-A at write file menu).
-	+ Multiple file buffers! (--enable-multibuffer configure option,
-	  --multibuffer, -F cmdline flag, Meta-F toggle, then ^R to load).
-	+ Better compatibility with Pico.  Mouse mode now supports clicking
-	  shortcuts and files in browser, search toggles that are Pico 
-	  extensions moved to Meta keys so as to not interfere with Pico
-	  control sequences.
+	GNU nano has finally reached its first stable release (1.0).
+	The 1.1 development tree has forked and is proceeding nicely.
+	There will be releases and updates for both the 1.1 and
+	1.0 trees until 1.1 stabilizes and becomes version 1.2.
 
    Chris Allegretta (chrisa@asty.org)
 

@@ -1,188 +1,55 @@
-CVS code -
+nano 1.0.4 - 08/24/2001
 - General
 	- Added BUGS #63 & 64.  Fixes in search_init() and nanogetstr(),
 	  new flag CLEAR_BACKUPSTRING because there's no easy way to
 	  clear the backupstring without making it global (messy), so we
 	  use a flag instead (just as messy?)
-- nano.texi:
-	-corrected the Mouse Toggle section, noticed by Daniel Bonniot.
-
-nano-1.1.1 - 07/28/2001
-- General
-	- Reverted included gettext from 0.10.38 to 0.10.35 in intl/ dir.
-	- Added m4/ directory to allow rebuilding using only the internal
-	  version of gettext.m4 (Albert Chin).
+- files.c:
+  do_browser()
+	- More Picoish keystrokes for the browser, ^P, ^N, etc, for up,
+	  down, etc, and add the consistent ^C to exit (Jim Knoble).
 - nano.c:
   main()
-	- Change the multibuffer getopt option to 'F' (David Lawrence
-	  Ramsey)
-  do_mark()
-	- Temporarily disable cursorpos when enabled to be able to see
-	  the mark (un)set message (Ken Tyler).
-- nanorc.sample
-	- Typo fixes and updates (David Lawrence Ramsey)
-- files.c:
-  new_file()
-	- Do add_open_files if there aren't any open yet (David Lawrence 
-	  Ramsey).
-  close_open_file()
-	- Try to open the next file first, then the previous one 
-	  (David Lawrence Ramsey).
-- global.c:
-  shortcut_init()
-	- Rewrote the whereis and replace lists to put CANCEL at the end
-	  of the list, and not include the toggle functions when using
-	  NANO_SMALL.
-- nano.h:
-	- Fix type in INSERTFILE_LIST_LEN.
-	- Rewrote all the macro definitions to be a little less messy,
-	  for the #ifdefs anyway.
-- rcfile.c:
-	- Update for the multibuffer option (oops) (David Lawrence Ramsey).
-- search.c:
-	- Added #ifdef NANO_SMALLs around the REVERSE_SEARCH code.
-  search_init()
-	- add #ifdef NANO_SMALL around toggles code.
-- winio.c:
-  bottombars()
-	- Fixed an off by one that wasn't letting lines with odd #
-	  shortcuts work in certain cases.
+	- Added Alt-[-7,8 support for home/end keys (Jeff Teunissen).
+- THANKS:
+	- Added some more people.
+- po/gl.po:
+	- Updated Galician translation (Jacobo Tarrío).
+- po/no.po:
+	- New Norwegian translation by Eivind Kjørstad <ekj@vestdata.no>.
+- po/sv.po:
+	- New Swedish translation by Christian Rose <menthos@menthos.com>.
 
-nano-1.1.0 - 07/15/2001
-- General
-	- New global variables currshortcut and currslen to support using
-	  the mouse with the shortcuts.  Also supports clicking on files
-	  in browser.  Added #ifdef DISABLE_MOUSE around this code also.
-	- Changed mouse disabling code from depending on --enable-tiny
-	  to its own flag, --disable-mouse.  The --tiny option defines
-	  this automatically, but now just mouse support can be disabled
-	  if desired.
-	- File Browser supports the "Goto Directory"
-	- Added rcfile.c source file.  Only includes much of anything when
-	  --enable-nanorc is used.  Tons of new funcs, most notably
-	  do_rcfile() called from nano.c:main().  Added much needed 
-	  function ncalloc(), will have to go through source code later 
-	  and change the aproproate calls which used nmalloc for lack of
-	  an apropriate calloc function *** FIXME ***
-	- After "Alternate" spell checker is called, cursor is repositioned on
-	  the same line as before ^T was pressed. 
-	- Moved config.h up in all .c files #include list (Albert Chin).
-	- Added config.guess and config.sub to distribution because,
-	  apparently, newer autoconf/automakes can't live without them.
-	- Various spelling updates by David Lawrence Ramsey.
-	- Changed all string allocations to charalloc(), new function
-	  designed to take nmalloc argument but call calloc based on 
-	  (char *) size.
-	- New macro DISABLE_WRAPJUSTIFY to easily check for both wrapping
-	  and justify being disabled.  This allows us to compile out the 
-	  -r flag if neither are set, and will also allow us to comment
-	  out -W when it is written.
-	- Allow fill to take a negative value ot signify a "from right side"
-	  value.  This allows the value to vary with the screen size yet
-	  still be correct.  New static value wrap_at to minimize code
-	  inpact.  Updated man page and info file.
-	- Allow file appending.  New shortcut list nano_insertfile_list (since
-	  insert and write routines can't share shortcut lists anymore), 
-	  new args to do_writeout and write_file called append, and of source
-	  code changes to those functions.
-	- Allow backwards searching.  Drastic rewrite of the search prompt
-	  string by Chris.  All other code by Ken Tyler.  New globals
-	  nano_reverse_msg, new functions revstrstr and revstrcasestr,
-	  many changes to search functions.  Not too big a code size
-	  increase!
-	- Moved extension functions (Case Sensitive, Regexp, and Backwards
-	  Search, Append key in write file function) to Meta keys, as
-	  people are complaining loudly about nano not being control-key
-	  compatible with Pico, which is a Bag Thing (TM).  Changes to
-	  shortcut_init, toggle_init, new toggles for backwards and regexp
-	  (and you can now toggle all search options including regexp at
-	  the Search: prompt!)  Changes to nanogetstr to enable Meta
-	  keys to be grabbed, changes to onekey to print M-style shortcuts. 
-	- New macro TOGGLE which just toggles, no more silly checking
-	  ISSET and then using SET or UNSET when we want a simple toggle
-	  for a flag.
-	- Added multiple buffer capability (God help us).  New configure
-	  option --enable-multibuffer (-F), changes to do_insertfile(),
-	  do_insertfile_void(), toggle_init(), do_gotoline(), edit_update(),
-	  and write_file(), new functions add_open_file(),
-	  open_file_change_name(), load_open_file(), open_file_dup_search(), 
-	  open_file_dup_fix(), open_prevfile(), open_nextfile(),
-	  close_open_file(), get_full_path(), die_save_file(), etc.
-	  (David Lawrence Ramsey).
-	- Using --enable-extra automatically defines --enable-multibuffer
-	  changes to version() and configure.in.
-	- Moved to gettext 0.10.38 at the last second, sure to break 
-	  something, but at least I can run make distcheck!
+nano 1.0.3 - 07/01/2001
 - Makefile.am:
 	- Include ABOUT-NLS and the new THANKS files to the distributed list.
 - THANKS:
 	- Initial, incomplete list of people to thank.
-	- Added some more people.
-- configure.in:
-	- New option, --enable-nanorc, which allows people to have a .nanorc
-	  initialization file and set options normally used on the command
-	  line, and color later on.
-	- Added --enable-color option to allow color and syntax highlighting
-	  (stub as of now).
 - cut.c:
-  add_to_cutbuffer()
-	- Remove useless statements (Rocco).
   cut_marked_segment()
 	- Add bizarre copy of bot node, else *BSD goes ballistic (fixes
-          BUG #60).
-	- Added 'destructive' argument.  Allows the selected text to be
-	  added to the cutbuffer without changing the contents of the 
-	  file.  This allows writing selection to separate files.
+	  BUG #60)
   do_cut_text()
 	- If the line is empty when using -k and wasn't already added,
 	  create a dummy line and add it to the cutbuffer (fixes bug #61)
 	- Reset marked_cut if we blow away the cutbuffer.
-	- Moved the case of current == mark_beginbuf into cut_marked
-	  segment, so do_writeout could call it when writing selection to
-	  file.
   do_uncut_text()
 	- Reset cutbuffer even if we're uncutting marked or cut to end text!
-- faq.html:
-	- Brought the FAQ up to date, many little changes (Jordi).
-	- Added sections 3.7 and 3.8 for the multibuffer and nanorc support.
 - files.c:
   do_browser()
-	- Minor fixes to the processing of SELECT function (Rocco)
-	- Added the "Goto Directory" code (Rocco)
 	- Don't shift the size of the file is it's less than 1K. Fixed
 	  files less than 1K being displayed as 0B (Rocco).
-	- More Picoish keystrokes for the browser, ^P, ^N, etc, for up,
-	  down, etc, and add the consistent ^C to exit (Jim Knoble).
-  do_writeout()
-	- New code to allow writing selected text to a separate file.
-	  When this is done, the current state is prserved.
-  write_file()
-	- New arg, nonamechange, means whether or not to update the
-	  current filename after writing the file out.
-	- Increment lineswritten when the very last line isn't null.
-	  Fixes off by one count when writing selection to file.
-- global.c:
-	- Updated some of the lists for the "Goto Directory" code (Rocco)
 - move.c:
-  page_up()
-	- Rewritten with a loop to make screen updates work when
-	  mark is set (fixes bug #59).
   do_home(), do_end()
 	- Don't keep cutbuffer.
-- nano.1:
-	- Added the missing -r flag (Jordi).
 - nano.c:
   do_alt_speller()
-	- Reposition cursor on same line as before ^T was called (Rocco)
-  ABCD(), main() 
-	- Add Alt-whatever-[a-d] support as well as Alt-whatever-[A-D].
-  main()
-	- Code to silently process "-g" and "-j" (Rocco)
-	- Added Alt-[-7,8 support for home/end keys (Jeff Teunissen).
+	- Try to go to the same line we were on before before spell check
+	  (Rocco).
   signal_init()
 	- Reorder sigaction calls, use sigfillset() to stop SIGTSTP and
-	  SIGCONT from being interrupted, allows suspending nano
-	  to work more reliably, esp. with mutt, etc. 
+	  SIGCONT from being interrupted, allows suspending nano 
+	  to work more reliably, esp. with mutt, etc.
   do_suspend()
 	- Don't try to play with the handler inside the handler.  Just
 	  raise a SIGSTOP.  We also now write the "use "fg"" message to
@@ -194,43 +61,49 @@ nano-1.1.0 - 07/15/2001
   do_cont()
 	- Now just does a refresh call instead of playing with the SIGTSTP
 	  handler.
-- nano.h:
-	- Updated the BROWSER_LIST_LEN for the "Goto Directory" code (Rocco)
-- proto.h:
-	- New shortcut list added: gotodir_list (Rocco).
-- search.c:
-  do_gotoline()
-	- Optimizations, remove "$" goes-to-last-line, less messages (Rocco)
-  do_replace()
-	- If we manage to make it in somehow with VIEW_MODE on, abort
-	  nicely (fixes BUG #59).
-- utils.c
+- utils.c:
   strcasestr()
-	- Replaced by mutt's mutt_stristr function, because the thought
+	- Replaced by mutt's mutt_stristr function, because the thought 
 	  of dynamically allocating memory and copying each line in a file
 	  to do a search or replace was causing me to lose sleep.
-- winio.c:
-  actual_x()
-	- Remove inline from function decl (Albert Chin).
-- po/POTFILES.in:
-	- Added utils.c to the list.
-- po/es.po, po/ca.po:
-	- Updated (Jordi).
-- po/gl.po:
-	- Galician translation by Jacobo Tarrío.
-- po/uk.po, po/ru.po:
-	- New Ukrainian and Russian translations by Sergey A. Ribalchenko
-	  <fisher@obu.ck.ua>, thanks!
-- po/id.po:
+- po/id.po
 	- Updated Indonesian translation by Tedi Heriyanto.
 - po/it.po
 	- Updated Italian translation by Marco Colombo.
-- po/no.po:
-	- New Norwegian translation by Eivind Kjørstad <ekj@vestdata.no>.
-- po/sv.po:
-	- New Swedish translation by Christian Rose <menthos@menthos.com>.
+- po/uk.po, po/ru.po
+	- Added Russian and Ukranian translations from 1.1 by Sergey A.
+	  Ribalchenko.
 
-nano 1.1 tree forked here 04/07/2001
+nano 1.0.2 - 05/12/2001
+- General:
+	- Moved config.h up in all .c files #include list (Albert Chin).
+	- Added config.guess and config.sub to distribution because
+	  apparently newer autoconf/automakes can't live without them.
+	- Various spelling updates by David Lawrence Ramsey.
+- cut.c:
+  add_to_cutbuffer()
+	- Remove useless statements (Rocco).
+- faq.html:
+	- Brought the FAQ up to date, many little changes (Jordi).
+- move.c:
+  page_up()
+	- Rewritten with a loop to make screen updates work when
+	  mark is set (fixes bug #59).
+- nano.c:
+  ABCD(), main()
+	- Add Alt-whatever-[a-d] support as well as Alt-whatever-[A-D].
+- nano.1:
+	- Added the missing -r flag (Jordi).
+- search.c:
+  do_replace()
+        - If we manage to make it in somehow with VIEW_MODE on, abort 
+          nicely (fixes BUG #59).                          
+- winio.c:
+  actual_x()
+	- Remove inline from function decl (Albert Chin).
+- po/gl.po:
+	- New Galician translation by Jacobo Tarrío <jtarrio@trasno.net>,
+	  thanks!
 
 nano 1.0.1 - 04/06/2001
 - General:
@@ -663,7 +536,7 @@ nano 0.9.22 - 12/02/2000
   handle_sighup()
 	- Now calls die instead of writing on its own and exiting normally.
 - search.c:
-  do_replace_highlight()
+  do_replace_hilight()
 	- New function, displays the currently selected word as highlighted
 	  in the spell check.  Called from do_replace_loop (Rocco Corsi).
 	- Added calls to curs_set(0) and (1) to disable the cursor when

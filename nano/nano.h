@@ -34,7 +34,6 @@
 #define SET(bit) flags |= bit
 #define UNSET(bit) flags &= ~bit
 #define ISSET(bit) (flags & bit)
-#define TOGGLE(bit) flags ^= bit
 
 
 #ifdef USE_SLANG	/* Slang support enabled */
@@ -64,27 +63,11 @@
 
 #define VERMSG "GNU nano " VERSION
 
-#if defined(DISABLE_WRAPPING) && defined(DISABLE_JUSTIFY)
-#define DISABLE_WRAPJUSTIFY 1
-#endif
-
 /* Structure types */
 typedef struct filestruct {
     char *data;
     struct filestruct *next;	/* Next node */
     struct filestruct *prev;	/* Previous node */
-
-#ifdef ENABLE_MULTIBUFFER
-    struct filestruct *file;	/* Current file */
-    int file_current_x;		/* Current file's x-coordinate position */
-    int file_current_y;		/* Current file's y-coordinate position */
-    int file_modified;		/* Current file's modification status */
-    char *file_path;		/* Current file's full path location */
-    int file_placewewant;	/* Current file's place we want */
-    int file_totlines;		/* Current file's total number of lines */
-    int file_totsize;		/* Current file's total size */
-#endif
-
     long lineno;		/* The line number */
 } filestruct;
 
@@ -105,17 +88,7 @@ typedef struct toggle {
 			   e.g. "Pico Messages"; we'll append Enabled or
 			   Disabled */
    int flag;		/* What flag actually gets toggled */
-   char override_ch;	/* The character to display on the help screen,
-			   if it isn't NULL */
 } toggle;
-
-#ifdef ENABLE_NANORC
-typedef struct rcoption {
-   char *name;
-   int flag;
-} rcoption;
- 
-#endif /* ENABLE_NANORC */
 
 /* Bitwise flags so we can save space (or more correctly, not waste it) */
 
@@ -138,9 +111,9 @@ typedef struct rcoption {
 #define TEMP_OPT         	(1<<16)
 #define CUT_TO_END         	(1<<17)
 #define DISABLE_CURPOS         	(1<<18)
-#define REVERSE_SEARCH		(1<<19)
-#define MULTIBUFFER		(1<<20)
-#define CLEAR_BACKUPSTRING	(1<<21)
+/* 19, 20 in nano-1.1 */
+#define CLEAR_BACKUPSTRING    (1<<21)
+
 
 /* Control key sequences, changing these would be very very bad */
 
@@ -202,8 +175,6 @@ typedef struct rcoption {
 #define NANO_ALT_X 'x'
 #define NANO_ALT_Y 'y'
 #define NANO_ALT_Z 'z'
-#define NANO_ALT_LCARAT ','
-#define NANO_ALT_RCARAT '.'
 
 /* Some semi-changeable keybindings; don't play with unless you're sure you
 know what you're doing */
@@ -240,6 +211,7 @@ know what you're doing */
 #define NANO_FIRSTLINE_KEY	NANO_PREVPAGE_KEY
 #define NANO_LASTLINE_KEY	NANO_NEXTPAGE_KEY
 #define NANO_CANCEL_KEY		NANO_CONTROL_C
+#define NANO_CASE_KEY		NANO_CONTROL_A
 #define NANO_REFRESH_KEY	NANO_CONTROL_L
 #define NANO_JUSTIFY_KEY	NANO_CONTROL_J
 #define NANO_JUSTIFY_FKEY	KEY_F(4)
@@ -258,9 +230,6 @@ know what you're doing */
 #define NANO_ENTER_KEY		NANO_CONTROL_M
 #define NANO_FROMSEARCHTOGOTO_KEY NANO_CONTROL_T
 #define NANO_TOFILES_KEY	NANO_CONTROL_T
-#define NANO_APPEND_KEY		NANO_ALT_A
-#define NANO_OPENPREV_KEY	NANO_ALT_LCARAT
-#define NANO_OPENNEXT_KEY	NANO_ALT_RCARAT
 
 #define TOGGLE_CONST_KEY	NANO_ALT_C
 #define TOGGLE_AUTOINDENT_KEY	NANO_ALT_I
@@ -271,61 +240,32 @@ know what you're doing */
 #define TOGGLE_CUTTOEND_KEY	NANO_ALT_K
 #define TOGGLE_REGEXP_KEY	NANO_ALT_E
 #define TOGGLE_WRAP_KEY		NANO_ALT_W
-#define TOGGLE_BACKWARDS_KEY	NANO_ALT_B
-#define TOGGLE_CASE_KEY		NANO_ALT_A
-#define TOGGLE_LOAD_KEY		NANO_ALT_F
 
-/* Toggle stuff, these static lengths need to go away RSN */
-
-#ifndef HAVE_REGEX_H
-#define NO_REGEX 1
-#else 
-#define NO_REGEX 0
-#endif
-
-#ifdef DISABLE_BROWSER
-#define NO_BROWSER 1
-#else
-#define NO_BROWSER 0
-#endif
-
-#ifdef NANO_SMALL
-#ifdef HAVE_REGEX_H
-#define NO_TOGGLES 3
-#else
-#define NO_TOGGLES 2
-#endif /* HAVE_REGEX_H */
-#else
-#define NO_TOGGLES 0
-#endif /* NANO_SMALL */
-
-#ifdef ENABLE_MULTIBUFFER
-#define MULTI_TOGGLES 3
-#else
-#define MULTI_TOGGLES 0
-#endif
-
-#define WHEREIS_LIST_LEN (8 - NO_REGEX - NO_TOGGLES)
-#define REPLACE_LIST_LEN (8 - NO_REGEX - NO_TOGGLES)
-#define TOGGLE_LEN (11 - NO_REGEX + MULTI_TOGGLES)
-#define WRITEFILE_LIST_LEN (3 - NO_BROWSER)
-#define INSERTFILE_LIST_LEN (2 - NO_BROWSER)
-#define BROWSER_LIST_LEN 4
 #define MAIN_LIST_LEN 26
 #define MAIN_VISIBLE 12
+#define WHEREIS_LIST_LEN 6
+#define REPLACE_LIST_LEN 6
 #define REPLACE_LIST_2_LEN 3
 #define GOTO_LIST_LEN 3
-#define GOTODIR_LIST_LEN 1
 #define HELP_LIST_LEN 3
 #define SPELL_LIST_LEN 1
 
+#ifndef DISABLE_BROWSER
+#define WRITEFILE_LIST_LEN 2
+#define BROWSER_LIST_LEN 3
+#else
+#define WRITEFILE_LIST_LEN 1
+#endif
 
-
+#ifdef HAVE_REGEX_H
+#define TOGGLE_LEN 9
+#else
+#define TOGGLE_LEN 8
+#endif
 
 #define VIEW 1
 #define NOVIEW 0
 
-#define NONE 3
 #define TOP 2
 #define CENTER 1
 #define BOTTOM 0
@@ -338,26 +278,5 @@ know what you're doing */
 
 /* Minimum fill length (space available for text before wrapping occurs) */
 #define MIN_FILL_LENGTH 10
-
-/* Color specific defines */
-#ifdef ENABLE_COLOR
-typedef struct colorstruct {
-    int fg;
-    int bg;
-    int bold;
-    int set;
-} colorstruct;
-
-#define FIRST_COLORNUM 16
-
-#define COLOR_TITLEBAR 16
-#define COLOR_BOTTOMBARS 17
-#define COLOR_STATUSBAR 18
-#define COLOR_TEXT 19
-#define COLOR_MARKER 20
-
-#define NUM_NCOLORS 5
-
-#endif /* ENABLE_COLOR */
 
 #endif /* ifndef NANO_H */ 

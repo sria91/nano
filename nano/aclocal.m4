@@ -125,117 +125,6 @@ for am_file in <<$1>>; do
 done<<>>dnl>>)
 changequote([,]))])
 
-#serial 1
-# This test replaces the one in autoconf.
-# Currently this macro should have the same name as the autoconf macro
-# because gettext's gettext.m4 (distributed in the automake package)
-# still uses it.  Otherwise, the use in gettext.m4 makes autoheader
-# give these diagnostics:
-#   configure.in:556: AC_TRY_COMPILE was called before AC_ISC_POSIX
-#   configure.in:556: AC_TRY_RUN was called before AC_ISC_POSIX
-
-undefine([AC_ISC_POSIX])
-
-AC_DEFUN([AC_ISC_POSIX],
-  [
-    dnl This test replaces the obsolescent AC_ISC_POSIX kludge.
-    AC_CHECK_LIB(cposix, strerror, [LIBS="$LIBS -lcposix"])
-  ]
-)
-
-#serial 19
-
-dnl By default, many hosts won't let programs access large files;
-dnl one must use special compiler options to get large-file access to work.
-dnl For more details about this brain damage please see:
-dnl http://www.sas.com/standards/large.file/x_open.20Mar96.html
-
-dnl Written by Paul Eggert <eggert@twinsun.com>.
-
-dnl Internal subroutine of AC_SYS_LARGEFILE.
-dnl AC_SYS_LARGEFILE_TEST_INCLUDES
-AC_DEFUN(AC_SYS_LARGEFILE_TEST_INCLUDES,
-  [[#include <sys/types.h>
-    /* Check that off_t can represent 2**63 - 1 correctly.
-       We can't simply "#define LARGE_OFF_T 9223372036854775807",
-       since some C++ compilers masquerading as C compilers
-       incorrectly reject 9223372036854775807.  */
-#   define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
-    int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
-			&& LARGE_OFF_T % 2147483647 == 1)
-		       ? 1 : -1];
-  ]])
-
-dnl Internal subroutine of AC_SYS_LARGEFILE.
-dnl AC_SYS_LARGEFILE_MACRO_VALUE(C-MACRO, VALUE, CACHE-VAR, COMMENT, INCLUDES, FUNCTION-BODY)
-AC_DEFUN(AC_SYS_LARGEFILE_MACRO_VALUE,
-  [AC_CACHE_CHECK([for $1 value needed for large files], $3,
-     [$3=no
-      AC_TRY_COMPILE([$5],
-	[$6], 
-	,
-	[AC_TRY_COMPILE([#define $1 $2]
-[$5]
-	   ,
-	   [$6],
-	   [$3=$2])])])
-   if test "[$]$3" != no; then
-     AC_DEFINE_UNQUOTED([$1], [$]$3, [$4])
-   fi])
-
-AC_DEFUN(NANO_AC_SYS_LARGEFILE,
-  [AC_REQUIRE([AC_PROG_CC])
-   AC_ARG_ENABLE(largefile,
-     [  --disable-largefile     omit support for large files])
-   if test "$enable_largefile" != no; then
-
-     AC_CACHE_CHECK([for special C compiler options needed for large files],
-       ac_cv_sys_largefile_CC,
-       [ac_cv_sys_largefile_CC=no
-        if test "$GCC" != yes; then
-	  # IRIX 6.2 and later do not support large files by default,
-	  # so use the C compiler's -n32 option if that helps.
-	  AC_TRY_COMPILE(AC_SYS_LARGEFILE_TEST_INCLUDES, , ,
-	    [ac_save_CC="$CC"
-	     CC="$CC -n32"
-	     AC_TRY_COMPILE(AC_SYS_LARGEFILE_TEST_INCLUDES, ,
-	       ac_cv_sys_largefile_CC=' -n32')
-	     CC="$ac_save_CC"])
-        fi])
-     if test "$ac_cv_sys_largefile_CC" != no; then
-       CC="$CC$ac_cv_sys_largefile_CC"
-     fi
-
-     AC_SYS_LARGEFILE_MACRO_VALUE(_FILE_OFFSET_BITS, 64,
-       ac_cv_sys_file_offset_bits,
-       [Number of bits in a file offset, on hosts where this is settable.],
-       AC_SYS_LARGEFILE_TEST_INCLUDES)
-     AC_SYS_LARGEFILE_MACRO_VALUE(_LARGE_FILES, 1,
-       ac_cv_sys_large_files,
-       [Define for large files, on AIX-style hosts.],
-       AC_SYS_LARGEFILE_TEST_INCLUDES)
-   fi
-  ])
-
-AC_DEFUN(AC_FUNC_FSEEKO,
-  [AC_SYS_LARGEFILE_MACRO_VALUE(_LARGEFILE_SOURCE, 1,
-     ac_cv_sys_largefile_source,
-     [Define to make fseeko visible on some hosts (e.g. glibc 2.2).],
-     [#include <stdio.h>], [return !fseeko;])
-   # We used to try defining _XOPEN_SOURCE=500 too, to work around a bug
-   # in glibc 2.1.3, but that breaks too many other things.
-   # If you want fseeko and ftello with glibc, upgrade to a fixed glibc.
-
-   AC_CACHE_CHECK([for fseeko], ac_cv_func_fseeko,
-     [ac_cv_func_fseeko=no
-      AC_TRY_LINK([#include <stdio.h>],
-        [return fseeko && fseeko (stdin, 0, 0);],
-	[ac_cv_func_fseeko=yes])])
-   if test $ac_cv_func_fseeko != no; then
-     AC_DEFINE(HAVE_FSEEKO, 1,
-       [Define if fseeko (and presumably ftello) exists and is declared.])
-   fi])
-
 # Configure paths for GLIB
 # Owen Taylor     97-11-3
 
@@ -441,11 +330,9 @@ main ()
 # but which still want to provide support for the GNU gettext functionality.
 # Please note that the actual code is *not* freely available.
 
-# serial 108
+# serial 5
 
-AC_PREREQ(2.13)               dnl Minimum Autoconf version required.
-
-AC_DEFUN(NANO_AM_WITH_NLS,
+AC_DEFUN(AM_WITH_NLS,
   [AC_MSG_CHECKING([whether NLS is requested])
     dnl Default is enabled NLS
     AC_ARG_ENABLE(nls,
@@ -456,21 +343,9 @@ AC_DEFUN(NANO_AM_WITH_NLS,
 
     USE_INCLUDED_LIBINTL=no
 
-    AC_ARG_WITH(locale-dir,
-      [  --with-locale-dir=DIR   specify locale directory],
-      LOCALE_DIR=$withval)
-    test -z "$LOCALE_DIR" && LOCALE_DIR='$(datadir)/locale'
-    AC_SUBST(LOCALE_DIR)
-
-    AC_ARG_WITH(gnu-locale-dir,
-      [  --with-gnu-locale-dir=DIR specify GNU locale directory],
-      GNU_LOCALE_DIR=$withval)
-    test -z "$GNU_LOCALE_DIR" && GNU_LOCALE_DIR='$(prefix)/share/locale'
-    AC_SUBST(GNU_LOCALE_DIR)
-
     dnl If we use NLS figure out what method
     if test "$USE_NLS" = "yes"; then
-      AC_DEFINE(ENABLE_NLS, 1, [Define to 1 if NLS is requested.])
+      AC_DEFINE(ENABLE_NLS)
       AC_MSG_CHECKING([whether included gettext is requested])
       AC_ARG_WITH(included-gettext,
         [  --with-included-gettext use the GNU gettext library included here],
@@ -495,19 +370,23 @@ AC_DEFUN(NANO_AM_WITH_NLS,
 
 	   if test "$gt_cv_func_gettext_libc" != "yes"; then
 	     AC_CHECK_LIB(intl, bindtextdomain,
-	       [AC_CHECK_LIB(intl, gettext)])
+	       [AC_CACHE_CHECK([for gettext in libintl],
+		 gt_cv_func_gettext_libintl,
+		 [AC_CHECK_LIB(intl, gettext,
+		  gt_cv_func_gettext_libintl=yes,
+		  gt_cv_func_gettext_libintl=no)],
+		 gt_cv_func_gettext_libintl=no)])
 	   fi
 
 	   if test "$gt_cv_func_gettext_libc" = "yes" \
-	      || test "$ac_cv_lib_intl_gettext" = "yes"; then
-	      AC_DEFINE(HAVE_GETTEXT, 1,
-	  [Define to 1 if you have gettext and don't want to use GNU gettext.])
-	      NANO_AM_PATH_PROG_WITH_TEST(MSGFMT, msgfmt,
+	      || test "$gt_cv_func_gettext_libintl" = "yes"; then
+	      AC_DEFINE(HAVE_GETTEXT)
+	      AM_PATH_PROG_WITH_TEST(MSGFMT, msgfmt,
 		[test -z "`$ac_dir/$ac_word -h 2>&1 | grep 'dv '`"], no)dnl
 	      if test "$MSGFMT" != "no"; then
 		AC_CHECK_FUNCS(dcgettext)
 		AC_PATH_PROG(GMSGFMT, gmsgfmt, $MSGFMT)
-		NANO_AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
+		AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
 		  [test -z "`$ac_dir/$ac_word -h 2>&1 | grep '(HELP)'`"], :)
 		AC_TRY_LINK(, [extern int _nl_msg_cat_cntr;
 			       return _nl_msg_cat_cntr],
@@ -531,17 +410,16 @@ AC_DEFUN(NANO_AM_WITH_NLS,
 	    dnl No gettext in C library.  Try catgets next.
 	    AC_CHECK_LIB(i, main)
 	    AC_CHECK_FUNC(catgets,
-	      [AC_DEFINE(HAVE_CATGETS, 1,
-			 [Define as 1 if you have catgets and don't want to use GNU gettext.])
+	      [AC_DEFINE(HAVE_CATGETS)
 	       INTLOBJS="\$(CATOBJS)"
 	       AC_PATH_PROG(GENCAT, gencat, no)dnl
 	       if test "$GENCAT" != "no"; then
 		 AC_PATH_PROG(GMSGFMT, gmsgfmt, no)
 		 if test "$GMSGFMT" = "no"; then
-		   NANO_AM_PATH_PROG_WITH_TEST(GMSGFMT, msgfmt,
+		   AM_PATH_PROG_WITH_TEST(GMSGFMT, msgfmt,
 		    [test -z "`$ac_dir/$ac_word -h 2>&1 | grep 'dv '`"], no)
 		 fi
-		 NANO_AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
+		 AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
 		   [test -z "`$ac_dir/$ac_word -h 2>&1 | grep '(HELP)'`"], :)
 		 USE_INCLUDED_LIBINTL=yes
 		 CATOBJEXT=.cat
@@ -566,10 +444,10 @@ AC_DEFUN(NANO_AM_WITH_NLS,
       if test "$nls_cv_use_gnu_gettext" = "yes"; then
         dnl Mark actions used to generate GNU NLS library.
         INTLOBJS="\$(GETTOBJS)"
-        NANO_AM_PATH_PROG_WITH_TEST(MSGFMT, msgfmt,
+        AM_PATH_PROG_WITH_TEST(MSGFMT, msgfmt,
 	  [test -z "`$ac_dir/$ac_word -h 2>&1 | grep 'dv '`"], msgfmt)
         AC_PATH_PROG(GMSGFMT, gmsgfmt, $MSGFMT)
-        NANO_AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
+        AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
 	  [test -z "`$ac_dir/$ac_word -h 2>&1 | grep '(HELP)'`"], :)
         AC_SUBST(MSGFMT)
 	USE_INCLUDED_LIBINTL=yes
@@ -602,10 +480,6 @@ AC_DEFUN(NANO_AM_WITH_NLS,
       DATADIRNAME=share
       nls_cv_header_intl=intl/libintl.h
       nls_cv_header_libgt=intl/libgettext.h
-    fi
-    if test -z "$nls_cv_header_intl"; then
-      # Clean out junk possibly left behind by a previous configuration.
-      rm -f intl/libintl.h
     fi
     AC_LINK_FILES($nls_cv_header_libgt, $nls_cv_header_intl)
     AC_OUTPUT_COMMANDS(
@@ -643,7 +517,7 @@ AC_DEFUN(NANO_AM_WITH_NLS,
     AC_SUBST(POSUB)
   ])
 
-AC_DEFUN(NANO_AM_GNU_GETTEXT,
+AC_DEFUN(AM_GNU_GETTEXT,
   [AC_REQUIRE([AC_PROG_MAKE_SET])dnl
    AC_REQUIRE([AC_PROG_CC])dnl
    AC_REQUIRE([AC_PROG_RANLIB])dnl
@@ -665,11 +539,11 @@ strdup __argz_count __argz_stringify __argz_next])
      AC_CHECK_FUNCS(stpcpy)
    fi
    if test "${ac_cv_func_stpcpy}" = "yes"; then
-     AC_DEFINE(HAVE_STPCPY, 1, [Define to 1 if you have the stpcpy function.])
+     AC_DEFINE(HAVE_STPCPY)
    fi
 
-   NANO_AM_LC_MESSAGES
-   NANO_AM_WITH_NLS
+   AM_LC_MESSAGES
+   AM_WITH_NLS
 
    if test "x$CATOBJEXT" != "x"; then
      if test "x$ALL_LINGUAS" = "x"; then
@@ -750,14 +624,15 @@ strdup __argz_count __argz_stringify __argz_next])
    dnl Generate list of files to be processed by xgettext which will
    dnl be included in po/Makefile.
    test -d po || mkdir po
-   case "$srcdir" in
-   .)
-     posrcprefix="../" ;;
-   /* | [[A-Za-z]]:*)
-     posrcprefix="$srcdir/" ;;
-   *)
-     posrcprefix="../$srcdir/" ;;
-   esac
+   if test "x$srcdir" != "x."; then
+     if test "x`echo $srcdir | sed 's@/.*@@'`" = "x"; then
+       posrcprefix="$srcdir/"
+     else
+       posrcprefix="../$srcdir/"
+     fi
+   else
+     posrcprefix="../"
+   fi
    rm -f po/POTFILES
    sed -e "/^#/d" -e "/^\$/d" -e "s,.*,	$posrcprefix& \\\\," -e "\$s/\(.*\) \\\\/\1/" \
 	< $srcdir/po/POTFILES.in > po/POTFILES
@@ -775,55 +650,7 @@ strdup __argz_count __argz_stringify __argz_next])
 
 dnl AM_PATH_PROG_WITH_TEST(VARIABLE, PROG-TO-CHECK-FOR,
 dnl   TEST-PERFORMED-ON-FOUND_PROGRAM [, VALUE-IF-NOT-FOUND [, PATH]])
-AC_DEFUN(NANO_AM_PATH_PROG_WITH_TEST,
-[# Extract the first word of "$2", so it can be a program name with args.
-set dummy $2; ac_word=[$]2
-AC_MSG_CHECKING([for $ac_word])
-AC_CACHE_VAL(ac_cv_path_$1,
-[case "[$]$1" in
-  /*)
-  ac_cv_path_$1="[$]$1" # Let the user override the test with a path.
-  ;;
-  *)
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS="${IFS}:"
-  for ac_dir in ifelse([$5], , $PATH, [$5]); do
-    test -z "$ac_dir" && ac_dir=.
-    if test -f $ac_dir/$ac_word; then
-      if [$3]; then
-	ac_cv_path_$1="$ac_dir/$ac_word"
-	break
-      fi
-    fi
-  done
-  IFS="$ac_save_ifs"
-dnl If no 4th arg is given, leave the cache variable unset,
-dnl so AC_PATH_PROGS will keep looking.
-ifelse([$4], , , [  test -z "[$]ac_cv_path_$1" && ac_cv_path_$1="$4"
-])dnl
-  ;;
-esac])dnl
-$1="$ac_cv_path_$1"
-if test -n "[$]$1"; then
-  AC_MSG_RESULT([$]$1)
-else
-  AC_MSG_RESULT(no)
-fi
-AC_SUBST($1)dnl
-])
-
-# Search path for a program which passes the given test.
-# Ulrich Drepper <drepper@cygnus.com>, 1996.
-#
-# This file can be copied and used freely without restrictions.  It can
-# be used in projects which are not available under the GNU General Public License
-# but which still want to provide support for the GNU gettext functionality.
-# Please note that the actual code is *not* freely available.
-
-# serial 1
-
-dnl AM_PATH_PROG_WITH_TEST(VARIABLE, PROG-TO-CHECK-FOR,
-dnl   TEST-PERFORMED-ON-FOUND_PROGRAM [, VALUE-IF-NOT-FOUND [, PATH]])
-AC_DEFUN([AM_PATH_PROG_WITH_TEST],
+AC_DEFUN(AM_PATH_PROG_WITH_TEST,
 [# Extract the first word of "$2", so it can be a program name with args.
 set dummy $2; ac_word=[$]2
 AC_MSG_CHECKING([for $ac_word])
@@ -867,18 +694,15 @@ AC_SUBST($1)dnl
 # but which still want to provide support for the GNU gettext functionality.
 # Please note that the actual code is *not* freely available.
 
-# serial 2
+# serial 1
 
-AC_PREREQ(2.13)               dnl Minimum Autoconf version required.
-
-AC_DEFUN(NANO_AM_LC_MESSAGES,
+AC_DEFUN(AM_LC_MESSAGES,
   [if test $ac_cv_header_locale_h = yes; then
     AC_CACHE_CHECK([for LC_MESSAGES], am_cv_val_LC_MESSAGES,
       [AC_TRY_LINK([#include <locale.h>], [return LC_MESSAGES],
        am_cv_val_LC_MESSAGES=yes, am_cv_val_LC_MESSAGES=no)])
     if test $am_cv_val_LC_MESSAGES = yes; then
-      AC_DEFINE(HAVE_LC_MESSAGES, 1,
-		[Define if your locale.h file contains LC_MESSAGES.])
+      AC_DEFINE(HAVE_LC_MESSAGES)
     fi
   fi])
 
