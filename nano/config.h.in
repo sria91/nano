@@ -1,4 +1,4 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define if using alloca.c.  */
 #undef C_ALLOCA
@@ -31,6 +31,9 @@
 /* Define to `long' if <sys/types.h> doesn't define.  */
 #undef off_t
 
+/* Define if you need to in order for stat and other things to work.  */
+#undef _POSIX_SOURCE
+
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE
 
@@ -58,6 +61,21 @@
 /* Define this if your curses lib has the _use_keypad flag */
 #undef HAVE_USEKEYPAD
 
+/* Define this if you have NLS */
+#undef ENABLE_NLS
+
+/* Define this is you have the catgets command */
+#undef HAVE_CATGETS
+
+/* Define this is you have GNU gettext */
+#undef HAVE_GETTEXT
+
+/* Define this for HAVE_LC_MESSAGES */
+#undef HAVE_LC_MESSAGES
+
+/* Define this if you have the stpcpy function (cool) */
+#undef HAVE_STPCPY
+
 /* Define this to make the nano executable as small as possible */
 #undef NANO_SMALL
 
@@ -84,27 +102,6 @@
 
 /* Define this to disable any and all text wrapping */
 #undef DISABLE_WRAPPING
-
-/* Define this to disable the mouse functions */
-#undef DISABLE_MOUSE
-
-/* Define this to disable setting of the operating directory (chroot of sorts) */
-#undef DISABLE_OPERATINGDIR
-
-/* Define this to enable multiple file buffers; this is disabled if NANO_SMALL is defined */
-#undef ENABLE_MULTIBUFFER
-
-/* Define this to use the .nanorc file */
-#undef ENABLE_NANORC
-
-/* Define this if your curses library has the use_default_colors command */
-#undef HAVE_USE_DEFAULT_COLORS
-
-/* Define this to have syntax hilighting, requires ENABLE_NANORC too! */
-#undef ENABLE_COLOR
-
-/* Define this to enable undoing....something */
-#undef ENABLE_UNDO
 
 /* Define if you have the __argz_count function.  */
 #undef HAVE___ARGZ_COUNT
@@ -205,33 +202,9 @@
 /* Define if you have the i library (-li).  */
 #undef HAVE_LIBI
 
-/* Define if you have the intl library (-lintl).  */
-#undef HAVE_LIBINTL
-
 /* Name of package */
 #undef PACKAGE
 
 /* Version number of package */
 #undef VERSION
-
-/* Number of bits in a file offset, on hosts where this is settable. */
-#undef _FILE_OFFSET_BITS
-
-/* Define for large files, on AIX-style hosts. */
-#undef _LARGE_FILES
-
-/* Define to 1 if you have the stpcpy function. */
-#undef HAVE_STPCPY
-
-/* Define if your locale.h file contains LC_MESSAGES. */
-#undef HAVE_LC_MESSAGES
-
-/* Define to 1 if NLS is requested. */
-#undef ENABLE_NLS
-
-/* Define to 1 if you have gettext and don't want to use GNU gettext. */
-#undef HAVE_GETTEXT
-
-/* Define as 1 if you have catgets and don't want to use GNU gettext. */
-#undef HAVE_CATGETS
 

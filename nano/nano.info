@@ -59,23 +59,11 @@ Command Line Options
 ====================
 
    `nano' takes the following options from the command line:
-`-D, --dos'
-     Write file in DOS format.
-
-`-F, --multibuffer'
-     Enable multiple file buffers.
-
-`-M, --mac'
-     Write file in Mac format.
+`-T [num, --tabsize=[num]'
+     Set the displayed tab length to [num] columns.
 
 `-R, --regexp'
      Turns on regular expression search and search/replace.
-
-`-S, --smooth'
-     Enables smooth scrolling.
-
-`-T [num], --tabsize=[num]'
-     Set the displayed tab length to [num] columns.
 
 `-V, --version'
      Print the version number and copyright and quit.
@@ -103,19 +91,13 @@ Command Line Options
      Enables the use of the mouse to select text (currently only useful
      for running under the X window system).
 
-`-o [dir], --operatingdir=[dir]'
-     Set operating directory. Makes nano set up something similar to a
-     chroot.
-
 `-p, --pico'
      Emulate Pico as closely as possible, sacrificing consistency for
      correct emulation.  *Note Pico Compatibility::, for more info.
 
 `-r [#cols], --fill=[#cols].'
      Wrap lines at column #cols.  By default this is the width of the
-     screen, less eight. If this value is negative, wrapping will occur
-     at #cols from the right of the screen, allowing it to vary along
-     with the screen width if the screen is resized.
+     screen, less eight.
 
 `-s [prog], --speller=[prog]'
      Invoke [prog] as the spell checker.  By default, `nano' uses its
@@ -148,9 +130,6 @@ Command Line Options
 `-z, --suspend'
      Enable suspend ability of `nano' using the system's suspend
      keystroke (usually ^Z).
-
-`-a, -b, -e, -f, -g, -j'
-     Ignored, for compatibility with Pico.
 
 `+LINE'
      Start at line number LINE instead of the default of line 1.
@@ -265,23 +244,11 @@ normally be done via command line flags. They are invoked via certain
 Meta key sequenced. *Note Special Functions::, for more info.  The
 following toggles are available:
 
-`Case Sensitive Search Toggle (Meta-A)'
-     toggles case sensistive searching functionality on/off.
-
-`Backwards Search Toggle (Meta-B)'
-     toggles backwards searching fuctionality on/off.
-
 `Constant Update Toggle (Meta-C)'
      toggles the -c (-const) command line flag.
 
-`DOS Format Toggle (Meta-D)'
-     toggles the -D (-dos) command line flag.
-
 `Regular Expressions Toggle (Meta-E)'
      toggles the -R (-regexp) command line flag.
-
-`Multiple Files Toggle (Meta-F)'
-     toggles the  -F (-multibuffer) command line flag.
 
 `AutoIndent Toggle (Meta-I)'
      toggles the -i (-autoindent) command line flag.
@@ -289,18 +256,12 @@ following toggles are available:
 `Cut To End Toggle (Meta-K)'
      toggles the -k (-cut) command line flag.
 
-`Mouse Toggle (Meta-M)'
+`Cut To End Toggle (Meta-M)'
      toggles the -m (-mouse) command line flag.
-
-`Mac Format Toggle (Meta-O)'
-     toggles the -M (-mac) command line flag.
 
 `Pico Mode Toggle (Meta-P)'
      toggles the -p (-pico) command line flag.  *Note Pico
      Compatibility::, for more info.
-
-`Smooth Scrolling Toggle (Meta-S)'
-     toggles the -s (-smooth) command line flag.
 
 `AutoWrap Toggle (Meta-W)'
      toggles the -w (-nowrap) command line flag.
@@ -310,12 +271,6 @@ following toggles are available:
 
 `Suspend Toggle (Meta-Z)'
      toggles the -z (-suspend) command line flag.
-
-`Open Previous File Toggle (Meta-<)'
-     changes buffer to previously loaded file.
-
-`Open Next File Toggle (Meta->)'
-     changes buffer to next loaded file.
 
 
 File: nano.info,  Node: The File Browser,  Next: Pico Compatibility,  Prev: Feature Toggles,  Up: Top
@@ -427,23 +382,6 @@ consider the following command line options:
      Disables all word wrapping in the editor.  This also eliminates the
      -w command line flag, as nonwrapping is then the default behavior.
 
-`--disable-mouse'
-     Disables all mouse functionality.  This also disables the -m
-     commands line flag which enables the mouse functions.
-
-`--disable-operatingdir'
-     Disables setting of operating directory. This also disables the -o
-     command line flag.
-
-`--disable-nls'
-     Disables Native Language support. This will make the available GNU
-     nano translations unusable.
-
-`--with-slang'
-     Compiling GNU nano with Slang is supported, and will make the
-     binary notably smaller than if compiled with ncurses or other
-     curses libraries.
-
 
 
 Tag Table:
@@ -451,17 +389,17 @@ Node: Top200
 Node: Introduction508
 Node: Overview934
 Node: Command Line Options1514
-Ref: Expert Mode3716
-Node: Editor Basics4628
-Node: Entering Text4853
-Node: Special Functions5193
-Node: The Titlebar6048
-Node: The Statusbar6746
-Node: Shortcut Lists7327
-Node: Online Help7720
-Node: Feature Toggles8096
-Node: The File Browser9912
-Node: Pico Compatibility10621
-Node: Building and Configure Options12663
+Ref: Expert Mode3236
+Node: Editor Basics4079
+Node: Entering Text4304
+Node: Special Functions4644
+Node: The Titlebar5499
+Node: The Statusbar6197
+Node: Shortcut Lists6778
+Node: Online Help7171
+Node: Feature Toggles7547
+Node: The File Browser8690
+Node: Pico Compatibility9399
+Node: Building and Configure Options11441
 
 End Tag Table

@@ -51,23 +51,3 @@
 /* Define this to disable any and all text wrapping */
 #undef DISABLE_WRAPPING
 
-/* Define this to disable the mouse functions */
-#undef DISABLE_MOUSE
-
-/* Define this to disable setting of the operating directory (chroot of sorts) */
-#undef DISABLE_OPERATINGDIR
-
-/* Define this to enable multiple file buffers; this is disabled if NANO_SMALL is defined */
-#undef ENABLE_MULTIBUFFER
-
-/* Define this to use the .nanorc file */
-#undef ENABLE_NANORC
-
-/* Define this if your curses library has the use_default_colors command */
-#undef HAVE_USE_DEFAULT_COLORS
-
-/* Define this to have syntax hilighting, requires ENABLE_NANORC too! */
-#undef ENABLE_COLOR
-
-/* Define this to enable undoing....something */
-#undef ENABLE_UNDO
