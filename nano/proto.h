@@ -2,7 +2,7 @@
 /**************************************************************************
  *   proto.h                                                              *
  *                                                                        *
- *   Copyright (C) 1999-2004 Chris Allegretta                             *
+ *   Copyright (C) 1999-2003 Chris Allegretta                             *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -19,7 +19,7 @@
  *                                                                        *
  **************************************************************************/
 
-/* Externs. */
+/* Externs */
 
 #include <sys/stat.h>
 
@@ -29,9 +29,7 @@
 
 #include "nano.h"
 
-#ifndef DISABLE_WRAPJUSTIFY
 extern int wrap_at;
-#endif
 extern int editwinrows;
 extern int current_x, current_y, totlines;
 extern int placewewant;
@@ -40,8 +38,7 @@ extern int mark_beginx;
 #endif
 extern long totsize;
 extern int temp_opt;
-extern int flags;
-extern int tabsize;
+extern int wrap_at, flags, tabsize;
 extern int search_last_line;
 extern int search_offscreen;
 extern int currslen;
@@ -104,7 +101,7 @@ extern shortcut *spell_list;
 extern shortcut *browser_list, *gotodir_list;
 #endif
 
-#if !defined(DISABLE_BROWSER) || !defined(DISABLE_HELP) || !defined(DISABLE_MOUSE)
+#if !defined(DISABLE_BROWSER) || !defined(DISABLE_HELP) || (!defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION))
 extern const shortcut *currshortcut;
 #endif
 
@@ -128,7 +125,7 @@ extern historyheadtype replace_history;
 
 extern int curses_ended;
 
-/* Functions we want available. */
+/* Functions we want available */
 
 /* Public functions in color.c */
 #ifdef ENABLE_COLOR
@@ -140,7 +137,8 @@ void update_color(void);
 /* Public functions in cut.c */
 filestruct *get_cutbottom(void);
 void add_to_cutbuffer(filestruct *inptr);
-void cut_marked_segment(void);
+void cut_marked_segment(filestruct *top, size_t top_x, filestruct *bot,
+                        size_t bot_x, int destructive);
 int do_cut_text(void);
 int do_uncut_text(void);
 
@@ -179,10 +177,6 @@ void init_operating_dir(void);
 int check_operating_dir(const char *currpath, int allow_tabcomp);
 #endif
 int write_file(const char *name, int tmp, int append, int nonamechange);
-#ifndef NANO_SMALL
-int write_marked(const char *name, int tmp, int append, int
-	nonamechange);
-#endif
 int do_writeout(const char *path, int exiting, int append);
 int do_writeout_void(void);
 char *real_dir_from_tilde(const char *buf);
@@ -210,7 +204,7 @@ void sc_init_one(shortcut **shortcutage, int key, const char *desc,
 #ifndef DISABLE_HELP
 	const char *help,
 #endif
-	int meta, int func_key, int misc, int view, int (*func) (void));
+	int alt, int misc1, int misc2, int view, int (*func) (void));
 #ifndef NANO_SMALL
 void toggle_init_one(int val, const char *desc, int flag);
 void toggle_init(void);
@@ -227,6 +221,7 @@ void thanks_for_all_the_fish(void);
 /* Public functions in move.c */
 int do_home(void);
 int do_end(void);
+void page_up(void);
 int do_page_up(void);
 int do_page_down(void);
 int do_up(void);
@@ -242,7 +237,7 @@ void die_too_small(void);
 void print_view_warning(void);
 void global_init(int save_cutbuffer);
 void window_init(void);
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
 void mouse_init(void);
 #endif
 #ifndef DISABLE_HELP
@@ -271,10 +266,11 @@ RETSIGTYPE cancel_fork(int signal);
 int open_pipe(const char *command);
 #endif
 #ifndef DISABLE_MOUSE
+#ifdef NCURSES_MOUSE_VERSION
 void do_mouse(void);
 #endif
+#endif
 void do_char(char ch);
-int do_verbatim_input(void);
 int do_backspace(void);
 int do_delete(void);
 int do_tab(void);
@@ -284,8 +280,8 @@ int do_next_word(void);
 int do_prev_word(void);
 #endif
 int do_mark(void);
-#ifndef DISABLE_WRAPPING
 void wrap_reset(void);
+#ifndef DISABLE_WRAPPING
 int do_wrap(filestruct *inptr);
 #endif
 #ifndef DISABLE_SPELLER
@@ -317,13 +313,8 @@ filestruct *backup_lines(filestruct *first_line, size_t par_len,
 			size_t quote_len);
 int breakable(const char *line, int goal);
 int break_line(const char *line, int goal, int force);
-int do_para_operation(int operation);
 #endif /* !DISABLE_JUSTIFY */
 int do_justify(void);
-#ifndef DISABLE_JUSTIFY
-int do_para_begin(void);
-int do_para_end(void);
-#endif
 int do_exit(void);
 void signal_init(void);
 RETSIGTYPE handle_hupterm(int signal);
@@ -331,12 +322,12 @@ RETSIGTYPE do_suspend(int signal);
 RETSIGTYPE do_cont(int signal);
 #ifndef NANO_SMALL
 void handle_sigwinch(int s);
-void allow_pending_sigwinch(int allow);
 #endif
 void print_numlock_warning(void);
 #ifndef NANO_SMALL
 void do_toggle(const toggle *which);
 #endif
+int abcd(int input);
 
 /* Public functions in rcfile.c */
 #ifdef ENABLE_NANORC
@@ -369,7 +360,6 @@ filestruct *findnextstr(int quiet, int bracket_mode,
 			const filestruct *begin, int beginx,
 			const char *needle, int no_sameline);
 int do_search(void);
-int do_research(void);
 void replace_abort(void);
 #ifdef HAVE_REGEX_H
 int replace_regexp(char *string, int create_flag);
@@ -431,30 +421,16 @@ void *nmalloc(size_t howmuch);
 void *nrealloc(void *ptr, size_t howmuch);
 char *mallocstrcpy(char *dest, const char *src);
 void new_magicline(void);
-#ifndef NANO_SMALL
-void mark_order(const filestruct **top, size_t *top_x,
-		const filestruct **bot, size_t *bot_x);
-#endif
 #ifndef DISABLE_TABCOMP
 int check_wildcard_match(const char *text, const char *pattern);
 #endif
 
 /* Public functions in winio.c */
-int get_kbinput(WINDOW *win, int *meta);
-int *get_verbatim_kbinput(WINDOW *win, int *kbinput_len, int
-	allow_ascii);
-int get_ignored_kbinput(WINDOW *win);
-int get_accepted_kbinput(WINDOW *win, int kbinput, int *meta);
-int get_ascii_kbinput(WINDOW *win, int kbinput);
-int get_escape_seq_kbinput(WINDOW *win, int *escape_seq, int
-	escape_seq_len);
-int get_escape_seq_abcd(int kbinput);
-int get_mouseinput(int *mouse_x, int *mouse_y, int shortcut);
 int do_first_line(void);
 int do_last_line(void);
 int xpt(const filestruct *fileptr, int index);
 size_t xplustabs(void);
-size_t actual_x(const char *str, size_t xplus);
+size_t actual_x(const filestruct *fileptr, size_t xplus);
 size_t strnlenpt(const char *buf, size_t size);
 size_t strlenpt(const char *buf);
 void blank_bottombars(void);
@@ -463,8 +439,7 @@ void blank_edit(void);
 void blank_statusbar(void);
 void blank_statusbar_refresh(void);
 void check_statblank(void);
-char *display_string(const char *buf, size_t start_col, int len);
-void nanoget_repaint(const char *buf, const char *inputbuf, size_t x);
+void nanoget_repaint(const char *buf, const char *inputbuf, int x);
 int nanogetstr(int allowtabs, const char *buf, const char *def,
 #ifndef NANO_SMALL
 		historyheadtype *history_list,
@@ -481,24 +456,27 @@ void onekey(const char *keystroke, const char *desc, int len);
 #ifndef NDEBUG
 int check_linenumbers(const filestruct *fileptr);
 #endif
-size_t get_page_start(size_t column);
+int get_page_start(int column);
 void reset_cursor(void);
 void add_marked_sameline(int begin, int end, filestruct *fileptr, int y,
 			 int virt_cur_x, int this_page);
-void edit_add(const filestruct *fileptr, const char *converted,
-		int yval, size_t start);
-void update_line(const filestruct *fileptr, size_t index);
+void edit_add(const filestruct *fileptr, int yval, int start
+#ifndef NANO_SMALL
+		, int virt_mark_beginx,	int virt_cur_x
+#endif
+		);
+void update_line(filestruct *fileptr, int index);
 void update_cursor(void);
 void center_cursor(void);
 void edit_refresh(void);
 void edit_refresh_clearok(void);
-void edit_update(filestruct *fileptr, topmidnone location);
+void edit_update(filestruct *fileptr, topmidbotnone location);
 int statusq(int tabs, const shortcut *s, const char *def,
 #ifndef NANO_SMALL
 		historyheadtype *history_list,
 #endif
 		const char *msg, ...);
-int do_yesno(int all, const char *msg);
+int do_yesno(int all, int leavecursor, const char *msg, ...);
 int total_refresh(void);
 void display_main_list(void);
 void statusbar(const char *msg, ...);
@@ -506,6 +484,7 @@ int do_cursorpos(int constant);
 int do_cursorpos_void(void);
 int line_len(const char *ptr);
 int do_help(void);
+int keypad_on(WINDOW *win, int newval);
 void do_replace_highlight(int highlight_flag, const char *word);
 void fix_editbot(void);
 #ifdef DEBUG

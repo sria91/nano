@@ -2,7 +2,7 @@
 /**************************************************************************
  *   search.c                                                             *
  *                                                                        *
- *   Copyright (C) 2000-2004 Chris Allegretta                             *
+ *   Copyright (C) 2000-2003 Chris Allegretta                             *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -107,22 +107,18 @@ int search_init(int replacing)
 
     search_init_globals();
 
-    /* If we don't already have a backupstring, set it. */
     if (backupstring == NULL)
-	backupstring = mallocstrcpy(NULL, "");
+	backupstring = mallocstrcpy(backupstring, "");
 
 #ifndef NANO_SMALL
     search_history.current = (historytype *)&search_history.next;
 #endif
 
     if (last_search[0] != '\0') {
-	char *disp = display_string(last_search, 0, COLS / 3);
-
 	buf = charalloc(COLS / 3 + 7);
 	/* We use COLS / 3 here because we need to see more on the line */
-	sprintf(buf, " [%s%s]", disp,
-		strlenpt(last_search) > COLS / 3 ? "..." : "");
-	free(disp);
+	sprintf(buf, " [%.*s%s]", COLS / 3, last_search,
+		strlen(last_search) > COLS / 3 ? "..." : "");
     } else {
 	buf = charalloc(1);
 	buf[0] = '\0';
@@ -136,23 +132,17 @@ int search_init(int replacing)
 	"%s%s%s%s%s%s",
 	_("Search"),
 
-#ifndef NANO_SMALL
 	/* This string is just a modifier for the search prompt,
 	   no grammar is implied */
-	ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") :
-#endif
-		"",
+	ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : "",
 
 	/* This string is just a modifier for the search prompt,
 	   no grammar is implied */
 	ISSET(USE_REGEXP) ? _(" [Regexp]") : "",
 
-#ifndef NANO_SMALL
 	/* This string is just a modifier for the search prompt,
 	   no grammar is implied */
-	ISSET(REVERSE_SEARCH) ? _(" [Backwards]") :
-#endif
-		"",
+	ISSET(REVERSE_SEARCH) ? _(" [Backwards]") : "",
 
 	replacing ? _(" (to replace)") : "",
 	buf);
@@ -160,13 +150,12 @@ int search_init(int replacing)
     /* Release buf now that we don't need it anymore */
     free(buf);
 
-    free(backupstring);
-    backupstring = NULL;
-
     /* Cancel any search, or just return with no previous search */
     if (i == -1 || (i < 0 && last_search[0] == '\0')) {
 	statusbar(_("Search Cancelled"));
 	reset_cursor();
+	free(backupstring);
+	backupstring = NULL;
 #ifndef NANO_SMALL
 	search_history.current = search_history.next;
 #endif
@@ -180,23 +169,29 @@ int search_init(int replacing)
 		if (regexp_init(last_search) == 0) {
 		    statusbar(regex_error, last_search);
 		    reset_cursor();
+		    free(backupstring);
+		    backupstring = NULL;
 		    return -3;
 		}
 #endif
 	    break;
 	case 0:		/* They entered something new */
-	    last_replace[0] = '\0';
 #ifdef HAVE_REGEX_H
 	    if (ISSET(USE_REGEXP))
 		if (regexp_init(answer) == 0) {
 		    statusbar(regex_error, answer);
 		    reset_cursor();
+		    free(backupstring);
+		    backupstring = NULL;
 #ifndef NANO_SMALL
 		    search_history.current = search_history.next;
 #endif
 		    return -3;
 		}
 #endif
+	    free(backupstring);
+	    backupstring = NULL;
+	    last_replace[0] = '\0';
 	    break;
 #ifndef NANO_SMALL
 	case TOGGLE_CASE_KEY:
@@ -218,6 +213,8 @@ int search_init(int replacing)
 	    backupstring = mallocstrcpy(backupstring, answer);
 	    return -2;		/* Call the opposite search function */
 	case NANO_FROMSEARCHTOGOTO_KEY:
+	    free(backupstring);
+	    backupstring = NULL;
 #ifndef NANO_SMALL
 	    search_history.current = search_history.next;
 #endif
@@ -229,6 +226,8 @@ int search_init(int replacing)
 	    return -3;
 	default:
 	    do_early_abort();
+	    free(backupstring);
+	    backupstring = NULL;
 	    return -3;
 	}
     }
@@ -395,9 +394,7 @@ int do_search(void)
     filestruct *fileptr = current, *didfind;
     int fileptr_x = current_x;
 
-#ifndef DISABLE_WRAPPING
     wrap_reset();
-#endif
     i = search_init(0);
     switch (i) {
     case -1:
@@ -436,48 +433,6 @@ int do_search(void)
     else if (current->lineno <= edittop->lineno
 	|| current->lineno >= editbot->lineno)
         edit_update(current, CENTER);
-
-    search_abort();
-
-    return 1;
-}
-
-/* Search for the next string without prompting. */
-int do_research(void)
-{
-    filestruct *fileptr = current, *didfind;
-    int fileptr_x = current_x;
-#ifdef HAVE_REGEX_H
-    const char *regex_error = _("Invalid regex \"%s\"");
-#endif /* HAVE_REGEX_H */
-
-#ifndef DISABLE_WRAPPING
-    wrap_reset();
-#endif
-    search_init_globals();
-
-    if (last_search[0] != '\0') {
-
-#ifdef HAVE_REGEX_H
-	if (ISSET(USE_REGEXP))
-	    if (regexp_init(last_search) == 0) {
-		statusbar(regex_error, last_search);
-		reset_cursor();
-		return -3;
-	    }
-#endif
-
-	search_last_line = 0;
-	didfind = findnextstr(FALSE, FALSE, current, current_x, last_search, 0);
-
-	if (fileptr == current && fileptr_x == current_x && didfind != NULL)
-	    statusbar(_("This is the only occurrence"));
-	else if (current->lineno <= edittop->lineno
-	    || current->lineno >= editbot->lineno)
-	    edit_update(current, CENTER);
-
-    } else
-        statusbar(_("No current search pattern"));
 
     search_abort();
 
@@ -695,24 +650,17 @@ int do_replace_loop(const char *prevanswer, const filestruct *begin,
 #ifdef HAVE_REGEX_H
 	if (ISSET(USE_REGEXP))
 	    match_len = regmatches[0].rm_eo - regmatches[0].rm_so;
-	else
+    	else
 #endif
 	    match_len = strlen(prevanswer);
 
 	if (!replaceall) {
-	    char *exp_word;
-	    size_t xpt = xplustabs();
-
-	    exp_word = display_string(current->data, xpt,
-		strnlenpt(current->data, match_len + current_x) - xpt);
-
 	    curs_set(0);
-	    do_replace_highlight(TRUE, exp_word);
+	    do_replace_highlight(TRUE, prevanswer);
 
-	    *i = do_yesno(1, _("Replace this instance?"));
+	    *i = do_yesno(1, 1, _("Replace this instance?"));
 
-	    do_replace_highlight(FALSE, exp_word);
-	    free(exp_word);
+	    do_replace_highlight(FALSE, prevanswer);
 	    curs_set(1);
 
 	    if (*i == -1)	/* We canceled the replace. */
@@ -977,7 +925,7 @@ int do_find_bracket(void)
 
     while (1) {
 	search_last_line = 0;
-	if (findnextstr(TRUE, TRUE, current, current_x, regexp_pat, 0) != NULL) {
+	if (findnextstr(1, 1, current, current_x, regexp_pat, 0) != NULL) {
 	    have_search_offscreen |= search_offscreen;
 
 	    /* found identical bracket */

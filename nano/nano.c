@@ -2,7 +2,7 @@
 /**************************************************************************
  *   nano.c                                                               *
  *                                                                        *
- *   Copyright (C) 1999-2004 Chris Allegretta                             *
+ *   Copyright (C) 1999-2003 Chris Allegretta                             *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -57,10 +57,6 @@
 #ifndef DISABLE_WRAPJUSTIFY
 static int fill = 0;	/* Fill - where to wrap lines, basically */
 #endif
-#ifndef DISABLE_WRAPPING
-static int same_line_wrap = 0;	/* Whether wrapped text should be
-				   prepended to the next line */
-#endif
 
 static struct termios oldterm;	/* The user's original term settings */
 static struct sigaction act;	/* For all our fun signal handlers */
@@ -70,6 +66,9 @@ static sigjmp_buf jmpbuf;	/* Used to return to mainloop after SIGWINCH */
 /* What we do when we're all set to exit */
 RETSIGTYPE finish(int sigage)
 {
+    keypad(edit, TRUE);
+    keypad(bottomwin, TRUE);
+
     if (!ISSET(NO_HELP)) {
 	mvwaddstr(bottomwin, 1, 0, hblank);
 	mvwaddstr(bottomwin, 2, 0, hblank);
@@ -186,7 +185,7 @@ void print_view_warning(void)
     statusbar(_("Key illegal in VIEW mode"));
 }
 
-/* Initialize global variables -- no better way for now.  If
+/* Initialize global variables - no better way for now.  If
  * save_cutbuffer is nonzero, don't set cutbuffer to NULL. */
 void global_init(int save_cutbuffer)
 {
@@ -233,22 +232,32 @@ void window_init(void)
     if (bottomwin != NULL)
 	delwin(bottomwin);
 
-    /* Set up the main text window. */
+    /* Set up the main text window */
     edit = newwin(editwinrows, COLS, 2, 0);
 
-    /* And the other windows. */
+    /* And the other windows */
     topwin = newwin(2, COLS, 0, 0);
     bottomwin = newwin(3 - no_help(), COLS, LINES - 3 + no_help(), 0);
 
-    /* Turn the keypad on, so that it still works after a Meta-X. */
-    keypad(edit, TRUE);
-    keypad(bottomwin, TRUE);
+    /* Oops, I guess we need this again.  Moved here so the keypad still
+       works after a Meta-X, for example, if we were using it before. */
+    if (!ISSET(ALT_KEYPAD)
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
+	|| ISSET(USE_MOUSE)
+#endif
+	) {
+	keypad(edit, TRUE);
+	keypad(bottomwin, TRUE);
+    }
 }
 
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
 void mouse_init(void)
 {
     if (ISSET(USE_MOUSE)) {
+	keypad_on(edit, 1);
+	keypad_on(bottomwin, 1);
+
 	mousemask(BUTTON1_RELEASED, NULL);
 	mouseinterval(50);
     } else
@@ -362,15 +371,12 @@ void help_init(void)
 	  "The bottom two lines show the most commonly used shortcuts "
 	  "in the editor.\n\n "
 	  "The notation for shortcuts is as follows: Control-key "
-	  "sequences are notated with a caret (^) symbol and can be "
-	  "entered either by using the Control (Ctrl) key or pressing the "
-	  "Esc key twice.  Escape-key sequences are notated with the Meta "
-	  "(M) symbol and can be entered using either the Esc, Alt or "
-	  "Meta key depending on your keyboard setup.  Also, pressing Esc "
-	  "twice and then typing a three-digit number from 000 to 255 "
-	  "will enter the character with the corresponding ASCII code.  "
-	  "The following keystrokes are available in the main editor "
-	  "window.  Alternative keys are shown in parentheses:\n\n");
+	  "sequences are notated with a caret (^) symbol and are entered "
+	  "with the Control (Ctrl) key.  Escape-key sequences are notated "
+	  "with the Meta (M) symbol and can be entered using either the "
+	  "Esc, Alt or Meta key depending on your keyboard setup.  The "
+	  "following keystrokes are available in the main editor window.  "
+	  "Alternative keys are shown in parentheses:\n\n");
 
     allocsize += strlen(ptr);
 
@@ -403,43 +409,43 @@ void help_init(void)
 
     /* Now add our shortcut info */
     for (s = currshortcut; s != NULL; s = s->next) {
-	/* true if the character in s->metaval is shown in first column */
+	/* true if the character in s->altval is shown in first column */
 	int meta_shortcut = 0;
 
-	if (s->val != NANO_NO_KEY) {
+	if (s->val > 0 && s->val < 32)
+	    ptr += sprintf(ptr, "^%c", s->val + 64);
 #ifndef NANO_SMALL
-	    if (s->val == NANO_HISTORY_KEY)
-		ptr += sprintf(ptr, "%.2s", _("Up"));
-	    else
-#endif
-	    if (s->val == NANO_CONTROL_SPACE)
-		ptr += sprintf(ptr, "^%.5s", _("Space"));
-	    else if (s->val == NANO_CONTROL_8)
-		ptr += sprintf(ptr, "^?");
-	    else
-		ptr += sprintf(ptr, "^%c", s->val + 64);
-	}
-#ifndef NANO_SMALL
-	else if (s->metaval != NANO_NO_KEY) {
+	else if (s->val == NANO_CONTROL_SPACE)
+	    ptr += sprintf(ptr, "^%.6s", _("Space"));
+	else if (s->altval == NANO_ALT_SPACE) {
 	    meta_shortcut = 1;
-	    if (s->metaval == NANO_ALT_SPACE)
-		ptr += snprintf(ptr, 8, "M-%.5s", _("Space"));
-	    else
-		ptr += sprintf(ptr, "M-%c", toupper(s->metaval));
-	}
+	    ptr += sprintf(ptr, "M-%.5s", _("Space"));
+	} else if (s->val == KEY_UP)
+	    ptr += sprintf(ptr, "%.2s", _("Up"));
 #endif
+	else if (s->altval > 0) {
+	    meta_shortcut = 1;
+	    ptr += sprintf(ptr, "M-%c", s->altval -
+			(('A' <= s->altval && s->altval <= 'Z') ||
+			'a' <= s->altval ? 32 : 0));
+	}
+	/* Hack */
+	else if (s->val >= 'a') {
+	    meta_shortcut = 1;
+	    ptr += sprintf(ptr, "M-%c", s->val - 32);
+	}
 
 	*(ptr++) = '\t';
 
-	if (s->func_key != NANO_NO_KEY)
-	    ptr += sprintf(ptr, "(F%d)", s->func_key - KEY_F0);
+	if (s->misc1 > KEY_F0 && s->misc1 <= KEY_F(64))
+	    ptr += sprintf(ptr, "(F%d)", s->misc1 - KEY_F0);
 
 	*(ptr++) = '\t';
 
-	if (!meta_shortcut && s->metaval != NANO_NO_KEY)
-	    ptr += sprintf(ptr, "(M-%c)", toupper(s->metaval));
-	else if (meta_shortcut && s->misc != NANO_NO_KEY)
-	    ptr += sprintf(ptr, "(M-%c)", toupper(s->misc));
+	if (!meta_shortcut && s->altval > 0)
+	    ptr += sprintf(ptr, "(M-%c)", s->altval -
+		(('A' <= s->altval && s->altval <= 'Z') || 'a' <= s->altval
+			? 32 : 0));
 
 	*(ptr++) = '\t';
 
@@ -452,7 +458,7 @@ void help_init(void)
     if (currshortcut == main_list)
 	for (t = toggles; t != NULL; t = t->next) {
 	    assert(t->desc != NULL);
-	    ptr += sprintf(ptr, "M-%c\t\t\t%s %s\n", toupper(t->val), t->desc,
+	    ptr += sprintf(ptr, "M-%c\t\t\t%s %s\n", t->val - 32, t->desc,
 				_("enable/disable"));
 	}
 #endif /* !NANO_SMALL */
@@ -639,6 +645,7 @@ void usage(void)
 #endif
     print1opt("-I", "--ignorercfiles", _("Don't look at nanorc files"));
 #endif
+    print1opt("-K", "--keypad", _("Use alternate keypad routines"));
 #ifndef NANO_SMALL
     print1opt("-M", "--mac", _("Write file in Mac format"));
     print1opt("-N", "--noconvert", _("Don't convert files from DOS/Mac format"));
@@ -659,12 +666,11 @@ void usage(void)
 #endif
     print1opt("-c", "--const", _("Constantly show cursor position"));
 #ifndef NANO_SMALL
-    print1opt("-d", "--rebinddelete", _("Fix Backspace/Delete confusion problem"));
     print1opt("-i", "--autoindent", _("Automatically indent new lines"));
     print1opt("-k", "--cut", _("Let ^K cut from cursor to end of line"));
 #endif
     print1opt("-l", "--nofollow", _("Don't follow symbolic links, overwrite"));
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
     print1opt("-m", "--mouse", _("Enable mouse"));
 #endif
 #ifndef DISABLE_OPERATINGDIR
@@ -720,7 +726,7 @@ void version(void)
 #ifdef DISABLE_JUSTIFY
     printf(" --disable-justify");
 #endif
-#ifdef DISABLE_MOUSE
+#if defined(DISABLE_MOUSE) || !defined(NCURSES_MOUSE_VERSION)
     printf(" --disable-mouse");
 #endif
 #ifdef DISABLE_OPERATINGDIR
@@ -774,7 +780,7 @@ void nano_disabled_msg(void)
 #endif
 
 #ifndef NANO_SMALL
-static int pid;		/* This is the PID of the newly forked process
+static int pid;		/* This is the PID of the newly forked process 
 			 * below.  It must be global since the signal
 			 * handler needs it. */
 RETSIGTYPE cancel_fork(int signal)
@@ -887,59 +893,90 @@ int open_pipe(const char *command)
 }
 #endif /* NANO_SMALL */
 
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
 void do_mouse(void)
 {
-    int mouse_x, mouse_y;
+    MEVENT mevent;
+    int currslen;
+    const shortcut *s = currshortcut;
 
-    if (get_mouseinput(&mouse_x, &mouse_y, 1) == 0) {
+    if (getmouse(&mevent) == ERR)
+	return;
 
-	/* Click in the edit window to move the cursor, but only when
-	   we're not in a subfunction. */
-	if (wenclose(edit, mouse_y, mouse_x) && currshortcut == main_list) {
-	    int sameline;
-		/* Did they click on the line with the cursor?  If they
-		   clicked on the cursor, we set the mark. */
-	    size_t xcur;
-		/* The character they clicked on. */
+    /* If mouse not in edit or bottom window, return */
+    if (wenclose(edit, mevent.y, mevent.x) && currshortcut == main_list) {
+	int sameline;
+	    /* Did they click on the line with the cursor?  If they
+	       clicked on the cursor, we set the mark. */
+	size_t xcur;
+	    /* The character they clicked on. */
 
-	    /* Subtract out size of topwin.  Perhaps we need a constant
-	       somewhere? */
-	    mouse_y -= 2;
+	/* Subtract out size of topwin.  Perhaps we need a constant
+	 * somewhere? */
+	mevent.y -= 2;
 
-	    sameline = (mouse_y == current_y);
+	sameline = mevent.y == current_y;
 
-	    /* Move to where the click occurred. */
-	    for (; current_y < mouse_y && current->next != NULL; current_y++)
-		current = current->next;
-	    for (; current_y > mouse_y && current->prev != NULL; current_y--)
-		current = current->prev;
+	/* Move to where the click occurred. */
+	for(; current_y < mevent.y && current->next != NULL; current_y++)
+	    current = current->next;
+	for(; current_y > mevent.y && current->prev != NULL; current_y--)
+	    current = current->prev;
 
-	    xcur = actual_x(current->data, get_page_start(xplustabs()) +
-		mouse_x);
+	xcur = actual_x(current, get_page_start(xplustabs()) + mevent.x);
 
-	    /* Selecting where the cursor is toggles the mark.  As does
-	       selecting beyond the line length with the cursor at the
-	       end of the line. */
-	    if (sameline && xcur == current_x) {
-		if (ISSET(VIEW_MODE)) {
-		    print_view_warning();
-		    return;
-		}
-		do_mark();
+	/* Selecting where the cursor is toggles the mark.  As does
+	   selecting beyond the line length with the cursor at the end of
+	   the line. */
+	if (sameline && xcur == current_x) {
+	    if (ISSET(VIEW_MODE)) {
+		print_view_warning();
+		return;
 	    }
-
-	    current_x = xcur;
-	    placewewant = xplustabs();
-	    edit_refresh();
+	    do_mark();
 	}
+
+	current_x = xcur;
+	placewewant = xplustabs();
+	edit_refresh();
+    } else if (wenclose(bottomwin, mevent.y, mevent.x) && !ISSET(NO_HELP)) {
+	int i, k;
+
+	if (currshortcut == main_list)
+	    currslen = MAIN_VISIBLE;
+	else
+	    currslen = length_of_list(currshortcut);
+
+	if (currslen < 2)
+	    k = COLS / 6;
+	else 
+	    k = COLS / ((currslen + (currslen %2)) / 2);
+
+	/* Determine what shortcut list was clicked */
+	mevent.y -= (editwinrows + 3);
+
+	if (mevent.y < 0) /* They clicked on the statusbar */
+	    return;
+
+	/* Don't select stuff beyond list length */
+	if (mevent.x / k >= currslen)	
+	    return;
+
+	for (i = 0; i < (mevent.x / k) * 2 + mevent.y; i++)
+	    s = s->next;
+
+	/* And ungetch that value */
+	ungetch(s->val);
+
+	/* And if it's an alt-key sequence, we should probably send alt
+	   too ;-) */
+	if (s->val >= 'a' && s->val <= 'z')
+	   ungetch(27);
     }
-    /* FIXME: If we clicked on a location in the statusbar, the cursor
-       should move to the location we clicked on. */
 }
 #endif
 
-/* The user typed a character; add it to the edit buffer. */
+/* The user typed a printable character; add it to the edit buffer. */
 void do_char(char ch)
 {
     size_t current_len = strlen(current->data);
@@ -949,33 +986,25 @@ void do_char(char ch)
 	 * update_line()? */
 #endif
 
-    if (ch == '\0')		/* Null to newline, if needed. */
-	ch = '\n';
-    else if (ch == '\n') {	/* Newline to Enter, if needed. */
-	do_enter();
-	return;
-    }
-
-    assert(current != NULL && current->data != NULL);
-
-    /* When a character is inserted on the current magicline, it means
-     * we need a new one! */
-    if (filebot == current) {
+    /* magic-line: when a character is inserted on the current magic line,
+     * it means we need a new one! */
+    if (filebot == current && current->data[0] == '\0') {
 	new_magicline();
 	fix_editbot();
     }
 
-    /* More dangerousness fun =) */
+    /* more dangerousness fun =) */
     current->data = charealloc(current->data, current_len + 2);
     assert(current_x <= current_len);
-    charmove(&current->data[current_x + 1], &current->data[current_x],
-	current_len - current_x + 1);
+    memmove(&current->data[current_x + 1],
+	    &current->data[current_x],
+	    current_len - current_x + 1);
     current->data[current_x] = ch;
     totsize++;
     set_modified();
 
 #ifndef NANO_SMALL
-    /* Note that current_x has not yet been incremented. */
+    /* note that current_x has not yet been incremented */
     if (current == mark_beginbuf && current_x < mark_beginx)
 	mark_beginx++;
 #endif
@@ -988,8 +1017,7 @@ void do_char(char ch)
 #endif
 
 #ifdef ENABLE_COLOR
-    if (ISSET(COLOR_SYNTAX))
-	refresh = 1;
+    refresh = 1;
 #endif
 
 #if !defined(DISABLE_WRAPPING) || defined(ENABLE_COLOR)
@@ -998,34 +1026,84 @@ void do_char(char ch)
 #endif
 }
 
-int do_verbatim_input(void)
-{
-    int *verbatim_kbinput;	/* Used to hold verbatim input. */
-    int verbatim_len;		/* Length of verbatim input. */
-    int i;
-
-    statusbar(_("Verbatim input"));
-    verbatim_kbinput = get_verbatim_kbinput(edit, &verbatim_len, 1);
-
-    /* Turn on DISABLE_CURPOS while inserting character(s) and turn it
-     * off afterwards, so that if constant cursor position display is
-     * on, it will be updated properly. */
-    SET(DISABLE_CURPOS);
-    for (i = 0; i < verbatim_len; i++)
-	do_char((char)verbatim_kbinput[i]);
-    UNSET(DISABLE_CURPOS);
-
-    free(verbatim_kbinput);
-
-    return 1;
-}
-
 int do_backspace(void)
 {
-    if (current != fileage || current_x > 0) {
+    int refresh = 0;
+    if (current_x > 0) {
+	assert(current_x <= strlen(current->data));
+	/* Let's get dangerous */
+	memmove(&current->data[current_x - 1], &current->data[current_x],
+		strlen(current->data) - current_x + 1);
+#ifdef DEBUG
+	fprintf(stderr, "current->data now = \"%s\"\n", current->data);
+#endif
+	align(&current->data);
+#ifndef NANO_SMALL
+	if (current_x <= mark_beginx && mark_beginbuf == current)
+	    mark_beginx--;
+#endif
 	do_left();
-	do_delete();
+#ifdef ENABLE_COLOR
+	refresh = 1;
+#endif
+    } else {
+	filestruct *previous;
+	const filestruct *tmp;
+
+	if (current == fileage)
+	    return 0;		/* Can't delete past top of file */
+
+	previous = current->prev;
+	current_x = strlen(previous->data);
+	placewewant = strlenpt(previous->data);
+#ifndef NANO_SMALL
+	if (current == mark_beginbuf) {
+	    mark_beginx += current_x;
+	    mark_beginbuf = previous;
+	}
+#endif
+	previous->data = charealloc(previous->data,
+				  current_x + strlen(current->data) + 1);
+	strcpy(previous->data + current_x, current->data);
+
+	unlink_node(current);
+	delete_node(current);
+	tmp = current;
+	current = (previous->next ? previous->next : previous);
+	renumber(current);
+	    /* We had to renumber before doing update_line. */
+	if (tmp == edittop)
+	    page_up();
+
+	/* Ooops, sanity check */
+	if (tmp == filebot) {
+	    filebot = current;
+	    editbot = current;
+
+	    /* Recreate the magic line if we're deleting it AND if the
+	       line we're on now is NOT blank.  if it is blank we
+	       can just use IT for the magic line.   This is how Pico
+	       appears to do it, in any case. */
+	    if (current->data[0] != '\0') {
+		new_magicline();
+		fix_editbot();
+	    }
+	}
+
+	current = previous;
+	if (current_y > 0)
+	    current_y--;
+	totlines--;
+#ifdef DEBUG
+	fprintf(stderr, "After, data = \"%s\"\n", current->data);
+#endif
+	refresh = 1;
     }
+
+    totsize--;
+    set_modified();
+    if (refresh)
+	edit_refresh();
     return 1;
 }
 
@@ -1043,13 +1121,12 @@ int do_delete(void)
 
     if (current_x != strlen(current->data)) {
 	/* Let's get dangerous */
-	charmove(&current->data[current_x], &current->data[current_x + 1],
+	memmove(&current->data[current_x], &current->data[current_x + 1],
 		strlen(current->data) - current_x);
 
 	align(&current->data);
 #ifdef ENABLE_COLOR
-	if (ISSET(COLOR_SYNTAX))
-	    refresh = 1;
+	refresh = 1;
 #endif
     } else if (current->next != NULL && (current->next != filebot || blbf)) {
 	/* We can delete the line before filebot only if it is blank: it
@@ -1290,25 +1367,24 @@ int do_mark(void)
 #ifdef NANO_SMALL
     nano_disabled_msg();
 #else
-    TOGGLE(MARK_ISSET);
-    if (ISSET(MARK_ISSET)) {
+    if (!ISSET(MARK_ISSET)) {
 	statusbar(_("Mark Set"));
+	SET(MARK_ISSET);
 	mark_beginbuf = current;
 	mark_beginx = current_x;
     } else {
 	statusbar(_("Mark UNset"));
+	UNSET(MARK_ISSET);
 	edit_refresh();
     }
 #endif
     return 1;
 }
 
-#ifndef DISABLE_WRAPPING
 void wrap_reset(void)
 {
-    same_line_wrap = 0;
+    UNSET(SAMELINEWRAP);
 }
-#endif
 
 #ifndef DISABLE_WRAPPING
 /* We wrap the given line.  Precondition: we assume the cursor has been 
@@ -1362,7 +1438,7 @@ int do_wrap(filestruct *inptr)
 	i = indent_length(inptr->data);
 #endif
     wrap_line = inptr->data + i;
-    for (; i < len; i++, wrap_line++) {
+    for(; i < len; i++, wrap_line++) {
 	/* record where the last word ended */
 	if (*wrap_line != ' ' && *wrap_line != '\t')
 	    word_back = i;
@@ -1393,7 +1469,7 @@ int do_wrap(filestruct *inptr)
     /* We prepend the wrapped text to the next line, if the flag is set,
      * and there is a next line, and prepending would not make the line
      * too long. */
-    if (same_line_wrap && inptr->next) {
+    if (ISSET(SAMELINEWRAP) && inptr->next) {
 	wrap_line = inptr->next->data;
 	wrap_line_len = strlen(wrap_line);
 
@@ -1471,7 +1547,7 @@ int do_wrap(filestruct *inptr)
  * other sundry things. */
 
     /* later wraps of this line will be prepended to the next line. */
-    same_line_wrap = 1;
+    SET(SAMELINEWRAP);
 
     /* Each line knows its line number.  We recalculate these if we
      * inserted a new line. */
@@ -1509,8 +1585,8 @@ int do_wrap(filestruct *inptr)
 #endif /* !DISABLE_WRAPPING */
 
 #ifndef DISABLE_SPELLER
-/* A word is misspelled in the file.  Let the user replace it.  We
- * return False if the user cancels. */
+/* word is misspelled in the file.  Let the user replace it.  We return
+   False if the user cancels. */
 int do_int_spell_fix(const char *word)
 {
     char *save_search;
@@ -1548,9 +1624,7 @@ int do_int_spell_fix(const char *word)
 
     search_last_line = FALSE;
 
-    /* We find the first whole-word occurrence of word.  We call
-       findnextstr() with bracket_mode set to TRUE in order to disable
-       search wrapping. */
+    /* We find the first whole-word occurrence of word. */
     while (findnextstr(TRUE, TRUE, fileage, -1, word, 0))
 	if (is_whole_word(current_x, current->data, word)) {
 	    edit_refresh();
@@ -1612,20 +1686,21 @@ char *do_int_speller(char *tempfile_name)
     pid_t pid_spell, pid_sort, pid_uniq;
     int spell_status, sort_status, uniq_status;
 
-    /* Create all three pipes up front. */
+    /* Create all three pipes up front */
+
     if (pipe(spell_fd) == -1 || pipe(sort_fd) == -1 || pipe(uniq_fd) == -1)
 	return _("Could not create pipe");
 
     statusbar(_("Creating misspelled word list, please wait..."));
+    /* A new process to run spell in */
 
-    /* A new process to run spell in. */
     if ((pid_spell = fork()) == 0) {
 
-	/* Child continues (i.e, future spell process). */
+	/* Child continues, (i.e. future spell process) */
 
 	close(spell_fd[0]);
 
-	/* Replace the standard input with the temp file. */
+	/* replace the standard in with the tempfile */
 	if ((tempfile_fd = open(tempfile_name, O_RDONLY)) == -1)
 	    goto close_pipes_and_exit;
 
@@ -1634,89 +1709,88 @@ char *do_int_speller(char *tempfile_name)
 
 	close(tempfile_fd);
 
-	/* Send spell's standard output to the pipe. */
+	/* send spell's standard out to the pipe */
 	if (dup2(spell_fd[1], STDOUT_FILENO) != STDOUT_FILENO)
 	    goto close_pipes_and_exit;
 
 	close(spell_fd[1]);
 
-	/* Start spell program; we are using PATH. */
+	/* Start spell program, we are using the PATH here!?!? */
 	execlp("spell", "spell", NULL);
 
-	/* Should not be reached, if spell is found. */
+	/* Should not be reached, if spell is found!!! */
 	exit(1);
     }
 
-    /* Parent continues here. */
+    /* Parent continues here */
     close(spell_fd[1]);
 
-    /* A new process to run sort in. */
+    /* A new process to run sort in */
     if ((pid_sort = fork()) == 0) {
 
-	/* Child continues (i.e, future spell process).  Replace the
-	 * standard input with the standard output of the old pipe. */
+	/* Child continues, (i.e. future spell process) */
+	/* replace the standard in with output of the old pipe */
 	if (dup2(spell_fd[0], STDIN_FILENO) != STDIN_FILENO)
 	    goto close_pipes_and_exit;
 
 	close(spell_fd[0]);
 
-	/* Send sort's standard output to the new pipe. */
+	/* send sort's standard out to the new pipe */
 	if (dup2(sort_fd[1], STDOUT_FILENO) != STDOUT_FILENO)
 	    goto close_pipes_and_exit;
 
 	close(sort_fd[1]);
 
-	/* Start sort program.  Use -f to remove mixed case without
-	 * having to have ANOTHER pipe for tr.  If this isn't portable,
-	 * let me know. */
+	/* Start sort program.  Use -f to remove mixed case without having
+	   to have ANOTHER pipe for tr.  If this isn't portable, let me know. */
 	execlp("sort", "sort", "-f", NULL);
 
-	/* Should not be reached, if sort is found. */
+	/* Should not be reached, if sort is found */
 	exit(1);
     }
 
     close(spell_fd[0]);
     close(sort_fd[1]);
 
-    /* A new process to run uniq in. */
+    /* A new process to run uniq in */
     if ((pid_uniq = fork()) == 0) {
 
-	/* Child continues (i.e, future uniq process).  Replace the
-	 * standard input with the standard output of the old pipe. */
+	/* Child continues, (i.e. future uniq process) */
+	/* replace the standard in with output of the old pipe */
 	if (dup2(sort_fd[0], STDIN_FILENO) != STDIN_FILENO)
 	    goto close_pipes_and_exit;
 
 	close(sort_fd[0]);
 
-	/* Send uniq's standard output to the new pipe. */
+	/* send uniq's standard out to the new pipe */
 	if (dup2(uniq_fd[1], STDOUT_FILENO) != STDOUT_FILENO)
 	    goto close_pipes_and_exit;
 
 	close(uniq_fd[1]);
 
-	/* Start uniq program; we are using PATH. */
+	/* Start uniq program, we are using PATH */
 	execlp("uniq", "uniq", NULL);
 
-	/* Should not be reached, if uniq is found. */
+	/* Should not be reached, if uniq is found */
 	exit(1);
     }
 
     close(sort_fd[0]);
     close(uniq_fd[1]);
 
-    /* Child process was not forked successfully. */
+    /* Child process was not forked successfully */
     if (pid_spell < 0 || pid_sort < 0 || pid_uniq < 0) {
 	close(uniq_fd[0]);
 	return _("Could not fork");
     }
 
-    /* Get system pipe buffer size. */
+    /* Get system pipe buffer size */
     if ((pipe_buff_size = fpathconf(uniq_fd[0], _PC_PIPE_BUF)) < 1) {
 	close(uniq_fd[0]);
 	return _("Could not get size of pipe buffer");
     }
 
-    /* Read in the returned spelling errors. */
+    /* Read-in the returned spelling errors */
     read_buff_read = 0;
     read_buff_size = pipe_buff_size + 1;
     read_buff = read_buff_ptr = charalloc(read_buff_size);
@@ -1732,7 +1806,7 @@ char *do_int_speller(char *tempfile_name)
     *read_buff_ptr = (char)NULL;
     close(uniq_fd[0]);
 
-    /* Process the spelling errors. */
+    /* Process the spelling errors */
     read_buff_word = read_buff_ptr = read_buff;
 
     while (*read_buff_ptr != '\0') {
@@ -1750,7 +1824,7 @@ char *do_int_speller(char *tempfile_name)
 	read_buff_ptr++;
     }
 
-    /* Special case where last word doesn't end with \n or \r. */
+    /* special case where last word doesn't end with \n or \r */
     if (read_buff_word != read_buff_ptr)
 	do_int_spell_fix(read_buff_word);
 
@@ -1758,7 +1832,8 @@ char *do_int_speller(char *tempfile_name)
     replace_abort();
     edit_refresh();
 
-    /* Process end of spell process. */
+    /* Process end of spell process */
+
     waitpid(pid_spell, &spell_status, 0);
     waitpid(pid_sort, &sort_status, 0);
     waitpid(pid_uniq, &uniq_status, 0);
@@ -1775,9 +1850,9 @@ char *do_int_speller(char *tempfile_name)
     /* Otherwise... */
     return NULL;
 
-  close_pipes_and_exit:
+close_pipes_and_exit:
 
-    /* Don't leak any handles. */
+    /* Don't leak any handles */
     close(tempfile_fd);
     close(spell_fd[0]);
     close(spell_fd[1]);
@@ -1802,9 +1877,9 @@ char *do_alt_speller(char *tempfile_name)
     int mark_set = ISSET(MARK_ISSET);
     int mbb_lineno_cur = 0;
 	/* We're going to close the current file, and open the output of
-	 * the alternate spell command.  The line that mark_beginbuf
-	 * points to will be freed, so we save the line number and
-	 * restore afterwards. */
+	   the alternate spell command.  The line that mark_beginbuf
+	   points to will be freed, so we save the line number and restore
+	   afterwards. */
 
     if (mark_set) {
 	mbb_lineno_cur = mark_beginbuf->lineno;
@@ -1814,7 +1889,7 @@ char *do_alt_speller(char *tempfile_name)
 
     endwin();
 
-    /* Set up an argument list to pass execvp(). */
+    /* Set up an argument list to pass the execvp function */
     if (spellargs == NULL) {
 	spellargs = (char **)nmalloc(arglen * sizeof(char *));
 
@@ -1828,9 +1903,9 @@ char *do_alt_speller(char *tempfile_name)
     }
     spellargs[arglen - 2] = tempfile_name;
 
-    /* Start a new process for the alternate speller. */
+    /* Start a new process for the alternate speller */
     if ((pid_spell = fork()) == 0) {
-	/* Start alternate spell program; we are using PATH. */
+	/* Start alternate spell program; we are using the PATH here!?!? */
 	execvp(spellargs[0], spellargs);
 
 	/* Should not be reached, if alternate speller is found!!! */
@@ -1841,9 +1916,9 @@ char *do_alt_speller(char *tempfile_name)
     if (pid_spell < 0)
 	return _("Could not fork");
 
-    /* Wait for alternate speller to complete. */
-    wait(&alt_spell_status);
+    /* Wait for alternate speller to complete */
 
+    wait(&alt_spell_status);
     if (!WIFEXITED(alt_spell_status) || WEXITSTATUS(alt_spell_status) != 0) {
 	char *altspell_error = NULL;
 	char *invoke_error = _("Could not invoke \"%s\"");
@@ -1855,27 +1930,22 @@ char *do_alt_speller(char *tempfile_name)
     }
 
     refresh();
-#ifndef NANO_SMALL
-    if (!mark_set) {
-	/* Only reload the temp file if it isn't a marked selection. */
-#endif
-	free_filestruct(fileage);
-	global_init(1);
-	open_file(tempfile_name, 0, 1);
-#ifndef NANO_SMALL
-    }
+    free_filestruct(fileage);
+    global_init(1);
+    open_file(tempfile_name, 0, 1);
 
+#ifndef NANO_SMALL
     if (mark_set) {
 	do_gotopos(mbb_lineno_cur, mark_beginx, y_cur, 0);
 	mark_beginbuf = current;
-	/* In case the line got shorter, assign mark_beginx. */
 	mark_beginx = current_x;
+	    /* In case the line got shorter, assign mark_beginx. */
 	SET(MARK_ISSET);
     }
 #endif
 
-    /* Go back to the old position, mark the file as modified, and make
-     * sure that the titlebar is refreshed. */
+    /* go back to the old position, mark the file as modified, and make
+       sure that the titlebar is refreshed */
     do_gotopos(lineno_cur, x_cur, y_cur, pww_cur);
     set_modified();
     clearok(topwin, FALSE);
@@ -1889,9 +1959,8 @@ int do_spell(void)
 {
 #ifdef DISABLE_SPELLER
     nano_disabled_msg();
-    return 1;
+    return TRUE;
 #else
-    int i;
     char *temp, *spell_msg;
 
     if ((temp = safe_tempnam(0, "nano.")) == NULL) {
@@ -1900,22 +1969,15 @@ int do_spell(void)
 	return 0;
     }
 
-#ifndef NANO_SMALL
-    if (ISSET(MARK_ISSET))
-	i = write_marked(temp, 1, 0, 0);
-    else
-#endif
-	i = write_file(temp, 1, 0, 0);
-
-    if (i == -1) {
+    if (write_file(temp, 1, 0, 0) == -1) {
 	statusbar(_("Spell checking failed: unable to write temp file!"));
 	free(temp);
 	return 0;
     }
 
 #ifdef ENABLE_MULTIBUFFER
-    /* Update the current open_files entry before spell-checking, in
-     * case any problems occur. */
+    /* update the current open_files entry before spell-checking, in case
+       any problems occur */
     add_open_file(1);
 #endif
 
@@ -1923,7 +1985,7 @@ int do_spell(void)
 	spell_msg = do_alt_speller(temp);
     else
 	spell_msg = do_int_speller(temp);
-    unlink(temp);
+    remove(temp);
     free(temp);
 
     if (spell_msg != NULL) {
@@ -2109,7 +2171,7 @@ filestruct *backup_lines(filestruct *first_line, size_t par_len,
 
     set_modified();
     cutbuffer = NULL;
-    for (; par_len > 0; par_len--) {
+    for(; par_len > 0; par_len--) {
 	filestruct *bob = copy_node(alice);
 
 	if (alice == first_line)
@@ -2136,7 +2198,7 @@ filestruct *backup_lines(filestruct *first_line, size_t par_len,
 /* Is it possible to break line at or before goal? */
 int breakable(const char *line, int goal)
 {
-    for (; *line != '\0' && goal >= 0; line++) {
+    for(; *line != '\0' && goal >= 0; line++) {
 	if (*line == ' ' || *line == '\t')
 	    return TRUE;
 
@@ -2166,7 +2228,7 @@ int break_line(const char *line, int goal, int force)
 	/* Current index in line */
 
     assert(line != NULL);
-    for (; *line != '\0' && goal >= 0; line++, cur_loc++) {
+    for(; *line != '\0' && goal >= 0; line++, cur_loc++) {
 	if (*line == ' ')
 	    space_loc = cur_loc;
 	assert(*line != '\t');
@@ -2182,7 +2244,7 @@ int break_line(const char *line, int goal, int force)
     if (space_loc == -1) {
 	/* No space found short enough. */
 	if (force)
-	    for (; *line != '\0'; line++, cur_loc++)
+	    for(; *line != '\0'; line++, cur_loc++)
 		if (*line == ' ' && *(line + 1) != ' ' && *(line + 1) != '\0')
 		    return cur_loc;
 	return -1;
@@ -2194,17 +2256,17 @@ int break_line(const char *line, int goal, int force)
 	space_loc++;
     return space_loc;
 }
+#endif /* !DISABLE_JUSTIFY */
 
-/* This function performs operations on paragraphs: justify, go to
- * beginning, and go to end. */
-int do_para_operation(int operation)
+/* This function justifies the current paragraph. */
+int do_justify(void)
 {
-/* operation == 0 means we're justifying the paragraph, operation == 1
- * means we're moving to the beginning line of the paragraph, and
- * operation == 2 means we're moving to the ending line of the
- * paragraph.
- *
- * To explain the justifying algorithm, I first need to define some
+#ifdef DISABLE_JUSTIFY
+    nano_disabled_msg();
+    return 1;
+#else
+
+/* To explain the justifying algorithm, I first need to define some
  * phrases about paragraphs and quotation:
  *   A line of text consists of a "quote part", followed by an
  *   "indentation part", followed by text.  The functions quote_length()
@@ -2213,40 +2275,38 @@ int do_para_operation(int operation)
  *   A line is "part of a paragraph" if it has a part not in the quote
  *   part or the indentation.
  *
- *   A line is "the beginning of a paragraph" if it is part of a
- *   paragraph and
+ *   A line is "the beginning of a paragraph" if it is part of a paragraph
+ *   and
  *	1) it is the top line of the file, or
  *	2) the line above it is not part of a paragraph, or
  *	3) the line above it does not have precisely the same quote
  *	   part, or
- *	4) the indentation of this line is not an initial substring of
- *	   the indentation of the previous line, or
+ *	4) the indentation of this line is not an initial substring of the
+ *	   indentation of the previous line, or
  *	5) this line has no quote part and some indentation, and
  *	   AUTOINDENT is not set.
  *   The reason for number 5) is that if AUTOINDENT is not set, then an
- *   indented line is expected to start a paragraph, like in books.
- *   Thus, nano can justify an indented paragraph only if AUTOINDENT is
- *   turned on.
+ *   indented line is expected to start a paragraph, like in books.  Thus,
+ *   nano can justify an indented paragraph only if AUTOINDENT is turned
+ *   on.
  *
  *   A contiguous set of lines is a "paragraph" if each line is part of
- *   a paragraph and only the first line is the beginning of a
- *   paragraph. */
+ *   a paragraph and only the first line is the beginning of a paragraph.
+ */
 
     size_t quote_len;
-	/* Length of the initial quotation of the paragraph we
-	 * justify. */
+	/* Length of the initial quotation of the paragraph we justify. */
     size_t par_len;
 	/* Number of lines in that paragraph. */
     filestruct *first_mod_line = NULL;
 	/* Will be the first line of the resulting justified paragraph
-	 * that differs from the original.  For restoring after
-	 * uncut. */
+	 * that differs from the original.  For restoring after uncut. */
     filestruct *last_par_line = current;
 	/* Will be the last line of the result, also for uncut. */
     filestruct *cutbuffer_save = cutbuffer;
 	/* When the paragraph gets modified, all lines from the changed
-	 * one down are stored in the cut buffer.  We back up the
-	 * original to restore it later. */
+	 * one down are stored in the cut buffer.  We back up the original
+	 * to restore it later. */
 
     /* We save these global variables to be restored if the user
      * unjustifies.  Note we don't need to save totlines. */
@@ -2262,13 +2322,9 @@ int do_para_operation(int operation)
     int mark_beginx_save = mark_beginx;
 #endif
 
-    size_t indent_len;	/* Generic indentation length. */
-    filestruct *line;	/* Generic line of text. */
-    size_t i;		/* Generic loop variable. */
-
-    static int no_restart = 0;
-    	/* Whether we're blocking restarting when searching for the
-    	 * beginning line of the paragraph. */
+    size_t indent_len;	/* generic indentation length */
+    filestruct *line;	/* generic line of text */
+    size_t i;		/* generic loop variable */
 
 #ifdef HAVE_REGEX_H
     regex_t qreg;	/* qreg is the compiled quotation regexp. 
@@ -2289,19 +2345,17 @@ int do_para_operation(int operation)
     /* Here is an assumption that is always true anyway. */
     assert(current != NULL);
 
-    current_x = 0;
-
-  restart_bps:
 /* Here we find the first line of the paragraph to justify.  If the
- * current line is in a paragraph, then we move back to the first line.
+ * current line is in a paragraph, then we move back to the first line. 
  * Otherwise we move down to the first line that is in a paragraph. */
     quote_len = quote_length(IFREG(current->data, &qreg));
     indent_len = indent_length(current->data + quote_len);
 
+    current_x = 0;
     if (current->data[quote_len + indent_len] != '\0') {
 	/* This line is part of a paragraph.  So we must search back to
-	 * the first line of this paragraph.  First we check items 1)
-	 * and 3) above. */
+	 * the first line of this paragraph.  First we check items 1) and
+	 * 3) above. */
 	while (current->prev != NULL && quotes_match(current->data,
 			quote_len, IFREG(current->prev->data, &qreg))) {
 	    size_t temp_id_len =
@@ -2323,25 +2377,6 @@ int do_para_operation(int operation)
 	    current = current->prev;
 	    current_y--;
 	}
-    } else if (operation == 1) {
-	/* This line is not part of a paragraph.  Move up until we get
-	 * to a non "blank" line, and then move down once. */
-	do {
-	    /* There is no previous paragraph, so nothing to move to. */
-	    if (current->prev == NULL) {
-		placewewant = 0;
-		if (current_y < 0)
-		    edit_update(current, CENTER);
-		else
-		    edit_refresh();
-		return 0;
-	    }
-	    current = current->prev;
-	    current_y--;
-	    quote_len = quote_length(IFREG(current->data, &qreg));
-	    indent_len = indent_length(current->data + quote_len);
-	} while (current->data[quote_len + indent_len] == '\0');
-	current = current->next;
     } else {
 	/* This line is not part of a paragraph.  Move down until we get
 	 * to a non "blank" line. */
@@ -2387,33 +2422,16 @@ int do_para_operation(int operation)
 	par_len++;
     }
 #ifdef HAVE_REGEX_H
-    /* We no longer need to check quotation, unless we're searching for
-     * the beginning of the paragraph. */
-    if (operation != 1)
-	regfree(&qreg);
+    /* We no longer need to check quotation. */
+    regfree(&qreg);
 #endif
 /* Now par_len is the number of lines in this paragraph.  Should never
  * call quotes_match() or quote_length() again. */
 
-    /* If we're searching for the beginning of the paragraph, skip the
-     * justification.  If we're searching for the end of the paragraph,
-     * move down the number of lines in the paragraph and skip the
-     * justification. */
-    if (operation == 1)
-	goto skip_justify;
-    else if (operation == 2) {
-	while (par_len > 0) {
-	    current = current->next;
-	    current_y++;
-	    par_len--;
-	}
-	goto skip_justify;
-    }
-
 /* Next step, we loop through the lines of this paragraph, justifying
  * each one individually. */
     SET(JUSTIFY_MODE);
-    for (; par_len > 0; current_y++, par_len--) {
+    for(; par_len > 0; current_y++, par_len--) {
 	size_t line_len;
 	size_t display_len;
 	    /* The width of current in screen columns. */
@@ -2449,8 +2467,8 @@ int do_para_operation(int operation)
 	    if (first_mod_line == NULL)
 		first_mod_line = backup_lines(current, par_len, quote_len);
 	    if (par_len == 1) {
-		/* There is no next line in this paragraph.  We make a
-		 * new line and copy text after break_pos into it. */
+		/* There is no next line in this paragraph.  We make a new
+		 * line and copy text after break_pos into it. */
 		splice_node(current, make_new_node(current),
 				current->next);
 		/* In a non-quoted paragraph, we copy the indent only if
@@ -2479,7 +2497,7 @@ int do_para_operation(int operation)
 		current->next->data = charealloc(current->next->data,
 			next_line_len + line_len - break_pos + 1);
 
-		charmove(current->next->data + indent_len + line_len - break_pos,
+		memmove(current->next->data + indent_len + line_len - break_pos,
 			current->next->data + indent_len,
 			next_line_len - indent_len + 1);
 		strcpy(current->next->data + indent_len,
@@ -2507,8 +2525,8 @@ int do_para_operation(int operation)
 
 	    indent_len = quote_len +
 			indent_length(current->next->data + quote_len);
-	    /* If we can't pull a word from the next line up to this
-	     * one, just go on. */
+	    /* If we can't pull a word from the next line up to this one,
+	     * just go on. */
 	    if (!breakable(current->next->data + indent_len,
 		    fill - display_len - 1))
 		goto continue_loc;
@@ -2553,7 +2571,7 @@ int do_para_operation(int operation)
 		totsize -= indent_len;
 		current_y--;
 	    } else {
-		charmove(current->next->data + indent_len,
+		memmove(current->next->data + indent_len,
 			current->next->data + indent_len + break_pos + 1,
 			next_line_len - break_pos - indent_len);
 		null_at(&current->next->data,
@@ -2566,8 +2584,8 @@ int do_para_operation(int operation)
     }
     UNSET(JUSTIFY_MODE);
 
-/* We are now done justifying the paragraph.  There are cleanup things
- * to do, and we check for unjustify. */
+/* We are now done justifying the paragraph.  There are cleanup things to
+ * do, and we check for unjustify. */
 
     /* totlines, totsize, and current_y have been maintained above.  We
      * now set last_par_line to the new end of the paragraph, update
@@ -2580,66 +2598,13 @@ int do_para_operation(int operation)
 	renumber(first_mod_line);
     }
 
-  skip_justify:
-    if (operation == 1) {
-	/* We're on the same line we started on.  Search for the first
-	 * non-"blank" line before the line we're on (if there is one),
-	 * continually restart that search from the current position
-	 * until we find a line that's part of a paragraph, and then
-	 * search once more from there, so that we end up on the first
-	 * line of that paragraph.  In the process, skip over lines
-	 * consisting only of spacing characters, as searching for the
-	 * end of the paragraph does.  Then update the screen. */
-	if (current != fileage && current == current_save && !no_restart) {
-	    while (current->prev != NULL) {
-		int j, j_space = 0;
-		current = current->prev;
-		current_y--;
-		for (j = 0; j < strlen(current->data); j++) {
-		    if (isspace(current->data[j]))
-			j_space++;
-		    else {
-			j = -1;
-			break;
-		    }
-		}
-		if (j != j_space && strlen(current->data) >=
-			(quote_len + indent_len) &&
-			current->data[quote_len + indent_len] != '\0') {
-		    no_restart = 1;
-		    break;
-		}
-	    }
-	    goto restart_bps;
-	} else
-	    no_restart = 0;
-#ifdef HAVE_REGEX_H
-	/* We no longer need to check quotation, if we were
-	 * searching for the beginning of the paragraph. */
-	regfree(&qreg);
-#endif
-	if (current_y < 0)
-	    edit_update(current, CENTER);
-	else
-	    edit_refresh();
-	return 0;
-    } else if (operation == 2) {
-	/* We've already moved to the end of the paragraph.  Update the
-	 * screen. */
-	if (current_y > editwinrows - 1)
-	    edit_update(current, CENTER);
-	else
-	    edit_refresh();
-	return 0;
-    }
-
     if (current_y > editwinrows - 1)
 	edit_update(current, CENTER);
     else
 	edit_refresh();
 
     statusbar(_("Can now UnJustify!"));
-    /* Change the shortcut list to display the unjustify code. */
+    /* Change the shortcut list to display the unjustify code */
     shortcut_init(1);
     display_main_list();
     reset_cursor();
@@ -2647,22 +2612,16 @@ int do_para_operation(int operation)
     /* Now get a keystroke and see if it's unjustify; if not, unget the
      * keystroke and return. */
 
-    {
-	int meta;
-	i = get_kbinput(edit, &meta);
-#ifndef DISABLE_MOUSE
-	/* If it was a mouse click, parse it with do_mouse() and it
-	 * might become the unjustify key.  Else give it back to the
-	 * input stream. */
-	if (i == KEY_MOUSE)
-	    do_mouse();
-	else
-	    ungetch(i);
-	i = get_kbinput(edit, &meta);
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
+    /* If it was a mouse click, parse it with do_mouse() and it might
+     * become the unjustify key.  Else give it back to the input stream. */
+    if ((i = wgetch(edit)) == KEY_MOUSE)
+	do_mouse();
+    else
+	ungetch(i);
 #endif
-    }
 
-    if (i != NANO_UNJUSTIFY_KEY && i != NANO_UNJUSTIFY_FKEY) {
+    if ((i = wgetch(edit)) != NANO_UNJUSTIFY_KEY) {
 	ungetch(i);
 	/* Did we back up anything at all? */
 	if (cutbuffer != cutbuffer_save)
@@ -2716,30 +2675,8 @@ int do_para_operation(int operation)
     display_main_list();
 
     return 0;
-}
-#endif /* !DISABLE_JUSTIFY */
-
-int do_justify(void)
-{
-#ifdef DISABLE_JUSTIFY
-    nano_disabled_msg();
-    return 1;
-#else
-    return do_para_operation(0);
 #endif
 }
-
-#ifndef DISABLE_JUSTIFY
-int do_para_begin(void)
-{
-    return do_para_operation(1);
-}
-
-int do_para_end(void)
-{
-    return do_para_operation(2);
-}
-#endif
 
 int do_exit(void)
 {
@@ -2757,11 +2694,14 @@ int do_exit(void)
 	    finish(0);
     }
 
-    if (ISSET(TEMP_OPT))
+    if (ISSET(TEMP_OPT)) {
 	i = 1;
-    else
-	i = do_yesno(0, _("Save modified buffer (ANSWERING \"No\" WILL DESTROY CHANGES) ? "));
-    
+    } else {
+	i = do_yesno(0, 0,
+		     _
+		     ("Save modified buffer (ANSWERING \"No\" WILL DESTROY CHANGES) ? "));
+    }
+
 #ifdef DEBUG
     dump_buffer(fileage);
 #endif
@@ -2805,7 +2745,6 @@ void signal_init(void)
     memset(&act, 0, sizeof(struct sigaction));
     act.sa_handler = SIG_IGN;
     sigaction(SIGINT, &act, NULL);
-    sigaction(SIGQUIT, &act, NULL);
 
     /* Trap SIGHUP and SIGTERM cuz we want to write the file out. */
     act.sa_handler = handle_hupterm;
@@ -2815,7 +2754,6 @@ void signal_init(void)
 #ifndef NANO_SMALL
     act.sa_handler = handle_sigwinch;
     sigaction(SIGWINCH, &act, NULL);
-    allow_pending_sigwinch(FALSE);
 #endif
 
 #ifdef _POSIX_VDISABLE
@@ -2894,7 +2832,7 @@ RETSIGTYPE do_cont(int signal)
     doupdate();
 
     /* The Hurd seems to need this, otherwise a ^Y after a ^Z will
-       start suspending again. */
+	start suspending again. */
     signal_init();
 
 #ifndef NANO_SMALL
@@ -2967,7 +2905,7 @@ void handle_sigwinch(int s)
 	edit_update(editbot, CENTER);
     erase();
 
-    /* Do these because width may have changed. */
+    /* Do these b/c width may have changed... */
     refresh();
     titlebar(NULL);
     edit_refresh();
@@ -2975,30 +2913,11 @@ void handle_sigwinch(int s)
     blank_statusbar();
     total_refresh();
 
-    /* Turn cursor back on for sure. */
+    /* Turn cursor back on for sure */
     curs_set(1);
 
-    /* Turn the keypad on and switch to cbreak mode, so that the keypad
-     * and input still work if we resized during verbatim input. */
-    keypad(edit, TRUE);
-    keypad(bottomwin, TRUE);
-#ifdef _POSIX_VDISABLE
-    cbreak();
-#endif
-
-    /* Jump back to the main loop. */
+    /* Jump back to main loop */
     siglongjmp(jmpbuf, 1);
-}
-
-void allow_pending_sigwinch(int allow)
-{
-    sigset_t winch;
-    sigemptyset(&winch);
-    sigaddset(&winch, SIGWINCH);
-    if (allow)
-	sigprocmask(SIG_UNBLOCK, &winch, NULL);
-    else
-	sigprocmask(SIG_BLOCK, &winch, NULL);
 }
 #endif /* !NANO_SMALL */
 
@@ -3026,7 +2945,7 @@ void do_toggle(const toggle *which)
     case TOGGLE_SUSPEND_KEY:
 	signal_init();
 	break;
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
     case TOGGLE_MOUSE_KEY:
 	mouse_init();
 	break;
@@ -3062,6 +2981,29 @@ void do_toggle(const toggle *which)
 }
 #endif /* !NANO_SMALL */
 
+/* This function returns the correct keystroke, given the A,B,C or D
+   input key.  This is a common sequence of many terms which send
+   Esc-O-[A-D] or Esc-[-[A-D]. */
+int abcd(int input)
+{
+    switch (input) {
+    case 'A':
+    case 'a':
+	return KEY_UP;
+    case 'B':
+    case 'b':
+	return KEY_DOWN;
+    case 'C':
+    case 'c':
+	return KEY_RIGHT;
+    case 'D':
+    case 'd':
+	return KEY_LEFT;
+    default:
+	return 0;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int optchr;
@@ -3070,8 +3012,7 @@ int main(int argc, char *argv[])
     int fill_flag_used = 0;	/* Was the fill option used? */
     const shortcut *s;
     int keyhandled = 0;	/* Have we handled the keystroke yet? */
-    int kbinput;		/* Input from keyboard */
-    int meta;
+    int kbinput = -1;		/* Input from keyboard */
 
 #ifndef NANO_SMALL
     const toggle *t;
@@ -3080,6 +3021,7 @@ int main(int argc, char *argv[])
     struct termios term;
 #endif
 #ifdef HAVE_GETOPT_LONG
+    int option_index = 0;
     const struct option long_options[] = {
 	{"help", 0, 0, 'h'},
 #ifdef ENABLE_MULTIBUFFER
@@ -3091,6 +3033,7 @@ int main(int argc, char *argv[])
 #endif
 	{"ignorercfiles", 0, 0, 'I'},
 #endif
+	{"keypad", 0, 0, 'K'},
 #ifndef DISABLE_JUSTIFY
 	{"quotestr", 1, 0, 'Q'},
 #endif
@@ -3103,9 +3046,8 @@ int main(int argc, char *argv[])
 	{"syntax", 1, 0, 'Y'},
 #endif
 	{"const", 0, 0, 'c'},
-	{"rebinddelete", 0, 0, 'd'},
 	{"nofollow", 0, 0, 'l'},
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
 	{"mouse", 0, 0, 'm'},
 #endif
 #ifndef DISABLE_OPERATINGDIR
@@ -3152,11 +3094,11 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef HAVE_GETOPT_LONG
-    while ((optchr = getopt_long(argc, argv, "h?BDFHIMNQ:RST:VY:abcdefgijklmo:pr:s:tvwxz",
-				 long_options, NULL)) != -1) {
+    while ((optchr = getopt_long(argc, argv, "h?BDFHIKMNQ:RST:VY:abcefgijklmo:pr:s:tvwxz",
+				 long_options, &option_index)) != -1) {
 #else
     while ((optchr =
-	    getopt(argc, argv, "h?BDFHIMNQ:RST:VY:abcdefgijklmo:pr:s:tvwxz")) != -1) {
+	    getopt(argc, argv, "h?BDFHIKMNQ:RST:VY:abcefgijklmo:pr:s:tvwxz")) != -1) {
 #endif
 
 	switch (optchr) {
@@ -3192,6 +3134,9 @@ int main(int argc, char *argv[])
 	    SET(NO_RCFILE);
 	    break;
 #endif
+	case 'K':
+	    SET(ALT_KEYPAD);
+	    break;
 #ifndef NANO_SMALL
 	case 'M':
 	    SET(MAC_FILE);
@@ -3244,9 +3189,6 @@ int main(int argc, char *argv[])
 	case 'c':
 	    SET(CONSTUPDATE);
 	    break;
-	case 'd':
-	    SET(REBIND_DELETE);
-	    break;
 #ifndef NANO_SMALL
 	case 'i':
 	    SET(AUTOINDENT);
@@ -3258,7 +3200,7 @@ int main(int argc, char *argv[])
 	case 'l':
 	    SET(NOFOLLOW_SYMLINKS);
 	    break;
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
 	case 'm':
 	    SET(USE_MOUSE);
 	    break;
@@ -3431,11 +3373,9 @@ int main(int argc, char *argv[])
 	    filename = mallocstrcpy(filename, argv[optind]);
     }
 
-    /* Termios initialization stuff: Back up the old settings so that
-     * they can be restored, disable SIGINT on ^C and SIGQUIT on ^\,
-     * since we need them for Cancel and Replace, and disable
-     * implementation-defined input processing. */
+    /* First back up the old settings so they can be restored, duh */
     tcgetattr(0, &oldterm);
+
 #ifdef _POSIX_VDISABLE
     term = oldterm;
     term.c_cc[VINTR] = _POSIX_VDISABLE;
@@ -3444,32 +3384,16 @@ int main(int argc, char *argv[])
     tcsetattr(0, TCSANOW, &term);
 #endif
 
-   /* Curses initialization stuff: Start curses, save the state of the
-    * the terminal mode, disable translation of carriage return (^M)
-    * into newline (^J) so we can catch the Enter key and use ^J for
-    * Justify, turn the keypad on for the windows that read input, put
-    * the terminal in cbreak mode (read one character at a time and
-    * interpret the special control keys) if we can selectively disable
-    * the special control keys or raw mode (read one character at a
-    * time and don't interpret the special control keys) if we
-    * can't, and turn off echoing of characters as they're typed. */
+    /* now ncurses init stuff... */
     initscr();
     savetty();
     nonl();
-    keypad(edit, TRUE);
-    keypad(bottomwin, TRUE);
-#ifdef _POSIX_VDISABLE
     cbreak();
-#else
-    raw();
-#endif
     noecho();
 
-    /* Set up the global variables and the shortcuts. */
+    /* Set up some global variables */
     global_init(0);
     shortcut_init(0);
-
-    /* Set up the signal handlers. */
     signal_init();
 
 #ifdef DEBUG
@@ -3477,9 +3401,14 @@ int main(int argc, char *argv[])
 #endif
 
     window_init();
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
     mouse_init();
 #endif
+
+    if (!ISSET(ALT_KEYPAD)) {
+	keypad(edit, TRUE);
+	keypad(bottomwin, TRUE);
+    }
 
 #ifdef DEBUG
     fprintf(stderr, "Main: bottom win\n");
@@ -3534,55 +3463,245 @@ int main(int argc, char *argv[])
 	if (ISSET(CONSTUPDATE))
 	    do_cursorpos(1);
 
-#if !defined(DISABLE_BROWSER) || !defined(DISABLE_HELP) || !defined(DISABLE_MOUSE)
+#if !defined(DISABLE_BROWSER) || !defined(DISABLE_HELP) || (!defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION))
 	currshortcut = main_list;
 #endif
 
-	kbinput = get_kbinput(edit, &meta);
+#ifndef _POSIX_VDISABLE
+	/* We're going to have to do it the old way, i.e. on cygwin */
+	raw();
+#endif
+
+	kbinput = wgetch(edit);
 #ifdef DEBUG
 	fprintf(stderr, "AHA!  %c (%d)\n", kbinput, kbinput);
 #endif
-	if (meta == 1) {
-	    /* Check for the metaval and misc defs... */
-	    for (s = main_list; s != NULL; s = s->next)
-		if ((s->metaval != NANO_NO_KEY && kbinput == s->metaval) ||
-		    (s->misc != NANO_NO_KEY && kbinput == s->misc)) {
-		    if (ISSET(VIEW_MODE) && !s->viewok)
-			print_view_warning();
-		    else {
-			if (s->func != do_cut_text)
-			    UNSET(KEEP_CUTBUFFER);
-			s->func();
-		    }
-		    keyhandled = 1;
+	if (kbinput == 27) {	/* Grab Alt-key stuff first */
+	    kbinput = wgetch(edit);
+	    switch (kbinput) {
+		/* Alt-O, suddenly very important ;) */
+	    case 'O':
+		kbinput = wgetch(edit);
+		/* Shift or Ctrl + Arrows are Alt-O-[2,5,6]-[A,B,C,D] on some terms */
+		if (kbinput == '2' || kbinput == '5' || kbinput == '6')
+		    kbinput = wgetch(edit);
+		if ((kbinput <= 'D' && kbinput >= 'A') ||
+			(kbinput <= 'd' && kbinput >= 'a'))
+		    kbinput = abcd(kbinput);
+		else if (kbinput <= 'z' && kbinput >= 'j')
+		    print_numlock_warning();
+		else if (kbinput <= 'S' && kbinput >= 'P')
+		    kbinput = KEY_F(kbinput - 79);
+#ifdef DEBUG
+		else {
+		    fprintf(stderr, "I got Alt-O-%c! (%d)\n",
+			    kbinput, kbinput);
+		    break;
 		}
+#endif
+		break;
+	    case 27:
+		/* If we get Alt-Alt, the next keystroke should be the same as a
+		   control sequence */
+		modify_control_seq = 1;
+		keyhandled = 1;
+		break;
+	    case '[':
+		kbinput = wgetch(edit);
+		switch (kbinput) {
+		case '1':	/* Alt-[-1-[0-5,7-9] = F1-F8 in X at least */
+		    kbinput = wgetch(edit);
+		    if (kbinput >= '1' && kbinput <= '5') {
+			kbinput = KEY_F(kbinput - 48);
+			wgetch(edit);
+		    } else if (kbinput >= '7' && kbinput <= '9') {
+			kbinput = KEY_F(kbinput - 49);
+			wgetch(edit);
+		    } else if (kbinput == '~')
+			kbinput = KEY_HOME;
+#ifdef DEBUG
+		    else {
+			fprintf(stderr, "I got Alt-[-1-%c! (%d)\n",
+				kbinput, kbinput);
+			break;
+		    }
+#endif
+		    break;
+		case '2':	/* Alt-[-2-[0,1,3,4] = F9-F12 in many terms */
+		    kbinput = wgetch(edit);
+		    switch (kbinput) {
+		    case '0':
+			kbinput = KEY_F(9);
+			wgetch(edit);
+			break;
+		    case '1':
+			kbinput = KEY_F(10);
+			wgetch(edit);
+			break;
+		    case '3':
+			kbinput = KEY_F(11);
+			wgetch(edit);
+			break;
+		    case '4':
+			kbinput = KEY_F(12);
+			wgetch(edit);
+			break;
+		    case '~':
+			kbinput = NANO_INSERTFILE_KEY;
+			break;
+#ifdef DEBUG
+		    default:
+			fprintf(stderr, "I got Alt-[-2-%c! (%d)\n",
+				kbinput, kbinput);
+			break;
+#endif
+		    }
+		    break;
+		case '3':	/* Alt-[-3 = Delete? */
+		    kbinput = NANO_DELETE_KEY;
+		    wgetch(edit);
+		    break;
+		case '4':	/* Alt-[-4 = End? */
+		    kbinput = NANO_END_KEY;
+		    wgetch(edit);
+		    break;
+		case '5':	/* Alt-[-5 = Page Up */
+		    kbinput = KEY_PPAGE;
+		    wgetch(edit);
+		    break;
+		case 'V':	/* Alt-[-V = Page Up in Hurd Console */
+		case 'I':	/* Alt-[-I = Page Up - FreeBSD Console */
+		    kbinput = KEY_PPAGE;
+		    break;
+		case '6':	/* Alt-[-6 = Page Down */
+		    kbinput = KEY_NPAGE;
+		    wgetch(edit);
+		    break;
+		case 'U':	/* Alt-[-U = Page Down in Hurd Console */
+		case 'G':	/* Alt-[-G = Page Down - FreeBSD Console */
+		    kbinput = KEY_NPAGE;
+		    break;
+		case '7':
+		    kbinput = KEY_HOME;
+		    wgetch(edit);
+		    break;
+		case '8':
+		    kbinput = KEY_END;
+		    wgetch(edit);
+		    break;
+		case '9':	/* Alt-[-9 = Delete in Hurd Console */
+		    kbinput = KEY_DC;
+		    break;
+		case '@':	/* Alt-[-@ = Insert in Hurd Console */
+		case 'L':	/* Alt-[-L = Insert - FreeBSD Console */
+		    kbinput = NANO_INSERTFILE_KEY;
+		    break;
+		case '[':	/* Alt-[-[-[A-E], F1-F5 in Linux console */
+		    kbinput = wgetch(edit);
+		    if (kbinput >= 'A' && kbinput <= 'E')
+			kbinput = KEY_F(kbinput - 64);
+		    break;
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'a':
+		case 'b':
+		case 'c':
+		case 'd':
+		    kbinput = abcd(kbinput);
+		    break;
+		case 'H':
+		    kbinput = KEY_HOME;
+		    break;
+		case 'F':
+		case 'Y':		/* End Key in Hurd Console */
+		    kbinput = KEY_END;
+		    break;
+		default:
+#ifdef DEBUG
+		    fprintf(stderr, "I got Alt-[-%c! (%d)\n",
+			    kbinput, kbinput);
+#endif
+		    break;
+		}
+		break;
+#ifdef ENABLE_MULTIBUFFER
+	    case NANO_OPENPREV_KEY:
+	    case NANO_OPENPREV_ALTKEY:
+		open_prevfile_void();
+		keyhandled = 1;
+		break;
+	    case NANO_OPENNEXT_KEY:
+	    case NANO_OPENNEXT_ALTKEY:
+		open_nextfile_void();
+		keyhandled = 1;
+		break;
+#endif
+	    default:
+		/* Check for the altkey defs.... */
+		for (s = main_list; s != NULL; s = s->next)
+		    if (kbinput == s->altval || (kbinput >= 'A' &&
+			    kbinput <= 'Z' && kbinput == s->altval - 32)) {
+			if (ISSET(VIEW_MODE) && !s->viewok)
+			    print_view_warning();
+			else {
+			    if (s->func != do_cut_text)
+				UNSET(KEEP_CUTBUFFER);
+			    s->func();
+			}
+			keyhandled = 1;
+			break;
+		    }
 #ifndef NANO_SMALL
 		if (!keyhandled)
 		    /* And for toggle switches */
 		    for (t = toggles; t != NULL; t = t->next)
-			if (kbinput == t->val) {
+			if (kbinput == t->val || (t->val >= 'a' &&
+				t->val <= 'z' && kbinput == t->val - 32)) {
 			    UNSET(KEEP_CUTBUFFER);
 			    do_toggle(t);
 			    keyhandled = 1;
+			    break;
 		        }
 #endif
 #ifdef DEBUG
-	    fprintf(stderr, "I got Alt-%c! (%d)\n", kbinput,
-		kbinput);
+		fprintf(stderr, "I got Alt-%c! (%d)\n", kbinput,
+			kbinput);
 #endif
+		break;
+	    }
+	}
+	/* Hack, make insert key do something useful, like insert file */
+	else if (kbinput == KEY_IC)
+	    kbinput = NANO_INSERTFILE_KEY;
+
+	/* If modify_control_seq is set, we received an Alt-Alt
+	   sequence before this, so we make this key a control sequence
+	   by subtracting 32, 64, or 96, depending on its value. */
+	if (!keyhandled && modify_control_seq) {
+	    if (kbinput == ' ')
+		kbinput -= 32;
+	    else if (kbinput >= 'A' && kbinput < 'a')
+		kbinput -= 64;
+	    else if (kbinput >= 'a' && kbinput <= 'z')
+		kbinput -= 96;
+
+	    modify_control_seq = 0;
 	}
 
 	/* Look through the main shortcut list to see if we've hit a
-	   shortcut key or function key */
+	   shortcut key */
 
 	if (!keyhandled)
-#if !defined(DISABLE_BROWSER) || !defined (DISABLE_HELP) || !defined(DISABLE_MOUSE)
+#if !defined(DISABLE_BROWSER) || !defined (DISABLE_HELP) || (!defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION))
 	    for (s = currshortcut; s != NULL && !keyhandled; s = s->next) {
 #else
 	    for (s = main_list; s != NULL && !keyhandled; s = s->next) {
 #endif
-		if ((s->val != NANO_NO_KEY && kbinput == s->val) ||
-		    (s->func_key != NANO_NO_KEY && kbinput == s->func_key)) {
+		if (kbinput == s->val ||
+		    (s->misc1 && kbinput == s->misc1) ||
+		    (s->misc2 && kbinput == s->misc2)) {
 		    if (ISSET(VIEW_MODE) && !s->viewok)
 			print_view_warning();
 		    else {
@@ -3591,8 +3710,10 @@ int main(int argc, char *argv[])
 			s->func();
 		    }
 		    keyhandled = 1;
-		    /* Break out explicitly once we successfully handle
-		       a shortcut */
+		    /* Rarely, the value of s can change after
+		       s->func(), leading to problems; get around this
+		       by breaking out explicitly once we successfully
+		       handle a shortcut */
 		    break;
 		}
 	    }
@@ -3602,18 +3723,19 @@ int main(int argc, char *argv[])
 
 #ifdef _POSIX_VDISABLE
 	/* Don't even think about changing this string */
-	if (kbinput == NANO_CONTROL_Q)
-	    statusbar(_("XON ignored, mumble mumble."));
-	if (kbinput == NANO_CONTROL_S)
+	if (kbinput == 19)
 	    statusbar(_("XOFF ignored, mumble mumble."));
+	if (kbinput == 17)
+	    statusbar(_("XON ignored, mumble mumble."));
 #endif
 	/* If we're in raw mode or using Alt-Alt-x, we have to catch
 	   Control-S and Control-Q */
-	if (kbinput == NANO_CONTROL_Q || kbinput == NANO_CONTROL_S)
+	if (kbinput == 17 || kbinput == 19)
 	    keyhandled = 1;
 
-	/* Catch ^Z by hand when triggered also */
-	if (kbinput == NANO_SUSPEND_KEY) {
+	/* Catch ^Z by hand when triggered also
+	   407 == ^Z in Linux console when keypad() is used? */
+	if (kbinput == 26 || kbinput == 407) {
 	    if (ISSET(SUSPEND))
 		do_suspend(0);
 	    keyhandled = 1;
@@ -3622,16 +3744,24 @@ int main(int argc, char *argv[])
 	/* Last gasp, stuff that's not in the main lists */
 	if (!keyhandled)
 	    switch (kbinput) {
-#ifndef DISABLE_MOUSE
+#if !defined(DISABLE_MOUSE) && defined(NCURSES_MOUSE_VERSION)
 	    case KEY_MOUSE:
 		do_mouse();
 		break;
 #endif
 
-	    case NANO_CONTROL_3:	/* Ctrl-[ (Esc), which should
-	    				 * have been handled before we
-	    				 * got here */
-	    case NANO_CONTROL_5:	/* Ctrl-] */
+	    case -1:		/* Stuff that we don't want to do squat */
+	    case 0:		/* Erg */
+	    case 29:		/* Ctrl-] */
+	    case 410:		/* Must ignore this, it's sent when we resize */
+#ifdef PDCURSES
+	    case 541:		/* ???? */
+	    case 542:		/* Control and alt in Windows *shrug* */
+	    case 543:		/* Right ctrl key */
+	    case 544:
+	    case 545:		/* Right alt key */
+#endif
+
 		break;
 	    default:
 #ifdef DEBUG

@@ -2,16 +2,16 @@
 # List of source files containing translatable strings.
 
 # Package source files
-src/cut.c
-src/files.c
-src/global.c
-src/move.c
-src/nano.c
-src/rcfile.c
-src/search.c
-src/utils.c
-src/winio.c
+cut.c
+files.c
+global.c
+move.c
+nano.c
+rcfile.c
+search.c
+utils.c
+winio.c
 
 # Package header files
-src/nano.h
-src/proto.h
+nano.h
+proto.h

@@ -2,7 +2,7 @@
 /**************************************************************************
  *   utils.c                                                              *
  *                                                                        *
- *   Copyright (C) 1999-2004 Chris Allegretta                             *
+ *   Copyright (C) 1999-2003 Chris Allegretta                             *
  *   This program is free software; you can redistribute it and/or modify *
  *   it under the terms of the GNU General Public License as published by *
  *   the Free Software Foundation; either version 2, or (at your option)  *
@@ -84,7 +84,7 @@ void null_at(char **data, size_t index)
 void unsunder(char *str, size_t true_len)
 {
     assert(str != NULL);
-    for (; true_len > 0; true_len--, str++)
+    for(; true_len > 0; true_len--, str++)
 	if (*str == '\0')
 	    *str = '\n';
 }
@@ -94,7 +94,7 @@ void unsunder(char *str, size_t true_len)
 void sunder(char *str)
 {
     assert(str != NULL);
-    for (; *str != '\0'; str++)
+    for(; *str != '\0'; str++)
 	if (*str == '\n')
 	    *str = '\0';
 }
@@ -135,7 +135,7 @@ int nstrnicmp(const char *s1, const char *s2, size_t n)
 const char *revstrstr(const char *haystack, const char *needle,
 			const char *rev_start)
 {
-    for (; rev_start >= haystack; rev_start--) {
+    for(; rev_start >= haystack ; rev_start--) {
 	const char *r, *q;
 
 	for (r = rev_start, q = needle ; *q == *r && *q != '\0'; r++, q++)
@@ -301,28 +301,6 @@ void new_magicline(void)
     totlines++;
     totsize++;
 }
-
-#ifndef NANO_SMALL
-/* Set top_x and bot_x to the top and bottom x-coordinates of the mark,
- * respectively, based on the locations of top and bot. */
-void mark_order(const filestruct **top, size_t *top_x,
-		const filestruct **bot, size_t *bot_x)
-{
-    assert(top != NULL && top_x != NULL && bot != NULL && bot_x != NULL);
-    if ((current->lineno == mark_beginbuf->lineno && current_x > mark_beginx)
-	|| current->lineno > mark_beginbuf->lineno) {
-	*top = mark_beginbuf;
-	*top_x = mark_beginx;
-	*bot = current;
-	*bot_x = current_x;
-    } else {
-	*bot = mark_beginbuf;
-	*bot_x = mark_beginx;
-	*top = current;
-	*top_x = current_x;
-    }
-}
-#endif
 
 #ifndef DISABLE_TABCOMP
 /*

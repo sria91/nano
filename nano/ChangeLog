@@ -1,211 +1,33 @@
-CVS code -
+GNU nano 1.2.3 - 2004.01.17
 - General:
-	- Change instances in the code that refresh the entire edit
-	  window when color support is enabled (in order to properly
-	  handle multi-line color regexes) to only do so when
-	  it's necessary, i.e, when COLOR_SYNTAX is set. (DLR)
-	- Minor cosmetic tweaks to the code involving direction keys.
-	  NANO_UP_KEY and NANO_DOWN_KEY are now NANO_PREVLINE_KEY and
-	  NANO_NEXTLINE_KEY, and the help messages for them have been
-	  changed accordingly.  Also remove extraneous references to
-	  NANO_DOWN_KEY in the search history shortcut entries. (DLR)
-	- Add NANO_UNJUSTIFY_FKEY (the same as NANO_UNCUT_FKEY) to the
-	  shortcut list, and tweak the unjustify routine to use it.
-	  (DLR)
-	- Add more intuitive Meta-key aliases for moving to the
-	  beginning and ending lines of a paragraph at the search
-	  prompt: Meta-P and Meta-N. (DLR)
-	- Block SIGWINCH after setting up its handler, and only unblock
-	  and handle it when we're in a stable state, i.e, when we're
-	  waiting for input from the user.  New function
-	  allow_pending_sigwinch(); changes to signal_init(),
-	  get_kbinput(), and get_verbatim_kbinput(). (DLR)
+	- Translation updates (see po/ChangeLog for details).
+	- Make sure the "historylog" option isn't included at all if
+	  NANO_SMALL is defined. (DLR)
 - files.c:
-  add_open_files()
-	- Make the saving of marked status in open_files->file_flags
-	  work properly again; a tweak to the ISSET() macro in 1.3.0
-	  to make it only return 0 or 1 broke it. (DLR)
-  write_marked()
-	- New function used to write the current marked selection to a
-	  file, split out from do_writeout(). (DLR)
-- global.c:
-  shortcut_init()
-	- Only allow verbatim input when we're not in view mode. (DLR)
-- nano.c:
-  do_verbatim_input()
-	- Remove the now-unneeded code to disable XON, XOFF, and
-	  suspend, since we now go into raw mode in
-	  get_verbatim_kbinput() and bypass them. (DLR)
-  do_spell(), do_int_speller(), do_alt_speller()
-	- Modify to write only the current selection from a file to the
-	  temporary file used for spell checking when the mark is on,
-	  and add a few miscellaneous cosmetic cleanups. (DLR)
-  signal_init()
-	- Trap SIGQUIT in addition to turning it off via termios in
-	  main().  This is consistent with SIGINT, which we trap here
-	  and turn off via termios in main(), as well as with the
-	  associated comment. (DLR)
-  handle_sigwinch()
-	- Set keypad() to TRUE and switch to cbreak mode just before
-	  calling siglongjmp(), in case we resized during verbatim
-	  input. (DLR)
-  main()
-	- Move the call to raw() on systems that don't define
-	  _POSIX_VDISABLE outside the main input/output loop, as it
-	  doesn't need to be called every time through the loop.  Call it
-	  instead of cbreak() on such systems, as it overrides cbreak()
-	  anyway. (DLR)
-	- Add more descriptive comments explaining the termios and
-	  curses setup routines, and turn the keypad on before setting
-	  the input mode. (DLR)
-- search.c:
-  do_replace_loop()
-	- Fix segfault when doing a regex replace of a string that
-	  matches inside a line (e.g. replace the "b" in "abc" with
-	  anything). (David Benbennick)
-- winio.c:
-  get_verbatim_kbinput()
-	- Set keypad() to FALSE and switch to raw mode while reading
-	  input, and set it back to TRUE and go back into cbreak mode
-	  mode afterwards.  (Note that if _POSIX_VDISABLE isn't defined,
-	  we don't need to change to or from raw mode since we're
-	  already in it exclusively.)  This ensures that we don't end up
-	  reading in extended keypad values that are outside the ASCII
-	  range or having to deal with interrupt-generating key values.
-	  Also, with keypad() set to TRUE, xterm generates KEY_BACKSPACE
-	  when the user hits Ctrl-H, which, when cut down to ASCII
-	  range, ends up being Ctrl-G, which can be confusing. (DLR)
-	- For consistency with get_kbinput(), use an int* to store and
-	  return the input instead of a char*, and tweak the functions
-	  that call it to handle this. (DLR)
-  get_accepted_kbinput()
-	- Don't use "kbinput = wgetch(win)" as a switch value. (DLR)
-  get_escape_seq_kbinput()
-	- Add support for the escape sequences for F1-F14 whenever
-	  possible (i.e, whenever a conflict doesn't occur), some
-	  additional comments, and a few cosmetic cleanups. (DLR)
-	- Use switch statements instead of strncmp() to read in the long
-	  xterm sequences for Ctrl-[arrow key] and Shift-[arrow key].
-	  (DLR)
-  get_escape_seq_abcd()
-	- A resurrected version of the old abcd() function, readded in
-	  order to simplify get_escape_seq_kbinput(). (DLR)
-  get_page_start()
-	- For consistency, tweak so that scrolling always occurs when we
-	  try to move onto the "$" at the end of the line, as opposed to
-	  (a) when we move onto the "$" at the end of the line on the
-	  first page and (b) when we move onto the character just before
-	  the "$" on subsequent pages. (DLR)
-  do_credits()
-	- Use nanosleep() instead of usleep().  The latter is only
-	  standard under BSD, whereas the former is POSIX compliant.
-	  (DLR)
-	- Add explanatory comment. (DLR)
-- faq.html:
-	- Fixed inaccuracy: multibuffer mode was first in nano 1.1.0,
-	  not 1.1.12. (DLR)
-- README:
-	- Reformat to 72 characters per line, fix wording in one spot,
-	  and fix spacing in several spots. (DLR)
-- NEWS:
-	- Capitalization fix. (DLR)
-
-GNU nano 1.3.1 - 2004.01.09
-- General:
-	- Minor overhaul and abstraction of the lowest level of mouse
-	  input, mostly adapted from the code in do_mouse() that handles
-	  clicking on the shortcut list.  New function do_mouseinput();
-	  changes to do_mouse(). (DLR)  David Benbennick: Add a few
-	  efficiency/extensibility tweaks.
-	- Modify the shortcut structure so that instead of having two
-	  miscellaneous key values (misc1 and misc2), there is one key
-	  value reserved for function keys (func_key) and one
-	  miscellaneous key value (misc), and tweak the
-	  shortcut-handling code to deal with this.  These changes allow
-	  NANO_OPEN(PREV|NEXT)_ALTKEY to work properly when added to the
-	  shortcut entries for NANO_OPEN(PREV|NEXT)_KEY.  Also remove
-	  the values in the shortcut list and elsewhere that were made
-	  redundant by the low-level input overhaul, use toupper()
-	  instead of subtracting 32 from values for greater code
-	  readability, and eliminate use of adding 32 to values when
-	  testing for toggles, as get_kbinput_accepted() converts toggle
-	  values to lowercase before returning them. (DLR)
-	- Remove the workarounds for missing KEY_UP and KEY_DOWN, as
-	  they appear to be holdovers of the old way of denoting the
-	  search history shortcuts; if they aren't defined, KEY_LEFT and
-	  KEY_RIGHT probably shouldn't work either, and all four appear
-	  to be standard keys in termcap/terminfo in any case.  Add new
-	  special sentinel key values NANO_NO_KEY (for no shortcut key)
-	  and NANO_HISTORY_KEY (for search history keys, both Up and
-	  Down), modify the shortcut list to use them, and modify the
-	  shortcut display routines to handle them.  Also modify the
-	  shortcut list code to not treat non-control character values
-	  of val as Meta-sequences, and fix dependencies on that
-	  behavior.  Also rename several variables: "alt" -> "meta",
-	  "altval" -> "metaval". (DLR)
-	- Hook up the verbatim input functions so that verbatim input
-	  can be used in the edit window.  New function
-	  do_verbatim_input(); changes to do_char(). (DLR)  Additional
-	  minor tweaks to do_char() by David Benbennick.
-	- Clarify the description of the --rebinddelete option. (DLR)
-	- Miscellaneous comment tweaks, and copyright year updates in
-	  the comments and in do_credits(). (DLR)
-- cut.c:
-	- Overhaul to increase efficiency and add various cleanups.
-	  Changes to add_to_cutbuffer(), cut_marked_segment(), and
-	  do_uncut_text(). (David Benbennick)
-- files.c:
-  check_operating_dir()
-	- Add an assert to ensure that full_operatingdir isn't NULL,
-	  a fix for reporting nonexistent (incomplete) directory names
-	  as being outside the operating directory when tab completion
-	  is being used, and cosmetic cleanups. (David Benbennick)
-  copy_file()
-	- New function used to create a copy of a file, split out from
-	  do_writeout(). (David Benbennick)
-  write_file()
-	- Completely overhauled to properly ignore appending/prepending
-	  to symlinks when NOFOLLOW_SYMLINKS is defined, to properly
-	  support writing a selection to a file under the changed
-	  cutting code, to have more concise error messages, to add
-	  various cleanups, and so on. (David Benbennick)
-  do_writeout()
-	- Prompt the user if we're trying to save an existing file (and
-	  not just a selection of it) under a different name. (DLR;
-	  suggested by Jean-Philippe Guérard)
-	- Overhaul the code used to write a selection of a file to
-	  temporarily set fileage and filebot to the top and bottom of
-	  the selection and then call write_file(), instead of following
-	  the old hackish behavior with cut_marked_segment() (which
-	  won't work after the cutting code changes anyway). (David
-	  Benbennick)  DLR: Tweak to not add an extra blank line to the
-	  end of the written selection if the cursor is at the beginning
-	  of the last line of the selection.
-  open_prevfile(), open_nextfile()
-	- For consistency with the rest of the multibuffer code, change
-	  "No more open files" to "No more open file buffers". (DLR)
+  read_file()
+	- After we've read in a file and possibly converted it from
+	  DOS/Mac format, set fileformat back to 0 to prevent erroneous
+	  conversion messages when we read other files in. (DLR)
   do_browser()
-	- Allow '?' to open the help browser, and readd the ability of
-	  'G'/'g' to open the "Go to Directory" prompt (which was
-	  erroneously removed before), for compatibility with Pico.
-	  (DLR)
-- global.c:
-  shortcut_init()
-	- Allow WHEREIS_NEXT_KEY to be used in view mode. (DLR)
+  	- Allow '?' to open the help browser, for compatibility with
+  	  Pico.  Also remove some of the Pico compatibility options in
+  	  the file browser that don't work properly for current Pico.
+  	  Backspace, 'l', 'q', and 'u' are invalid.  'd' deletes the
+  	  highlighted file, and 'r' renames the highlighted file;
+  	  neither of these are implemented. (DLR)
 - nano.c:
-  do_int_spell_fix()
-	- Add comment explaining why findnextstr() is called with
-	  bracket_mode set to TRUE even though we aren't doing a bracket
-	  search. (DLR)
-  do_para_operation()
-	- Convert to use the new low-level input functions. (DLR)
-  main()
-	- Remove unused variable option_index. (DLR)
-	- Fix omission of NANO_NO_KEY in the shortcut list scanning
-	  code. (DLR)
-	- Remove now-unnecessary initialization of kbinput. (DLR)
-- nano.h:
-	- Comment additions and cosmetic tweaks. (DLR)
+  window_init()
+	- If keypad() was TRUE before we pressed Meta-X (as Meta-X
+  	  apparently turns it off under both ncurses and PDCurses), set
+  	  it to TRUE afterwards. (DLR)
+  do_suspend()
+        - Use handle_hupterm() to handle SIGHUP and SIGTERM so we can
+          properly deal with them while nano is suspended. (DLR; problem
+          found by David Benbennick)
+- proto.h:
+	- Surround the do_prev_word() and do_next_word() prototypes with
+	  NANO_SMALL #ifdefs, since the actual functions aren't included
+	  in tiny mode. (DLR)
 - search.c:
   findnextstr(), do_replace_loop()
 	- Fix potential infinite loops and other misbehavior when doing
@@ -215,267 +37,24 @@ GNU nano 1.3.1 - 2004.01.09
 	  found, so that such regexes are only found once per line.
 	  Also change length_change from a long to an int; size_t is
 	  unsuitable due to its being unsigned. (DLR; found by Mike
-	  Frysinger and DLR)  David Benbennick: Add a few minor cleanups
-	  to do_replace_loop().
+	  Frysinger and DLR, match_len by David Benbennick)  David
+	  Benbennick: Add a few minor cleanups to do_replace_loop(), and
+	  fix segfault when doing a regex replace of a string that
+	  matches inside a line (e.g. replace the "b" in "abc" with
+	  anything).
 - winio.c:
-  get_kbinput(), get_accepted_kbinput()
-	- Don't pass in the value of the REBIND_DELETE flag anymore.
-	  Instead, handle it directly inside the functions. (DLR)
-  get_accepted_kbinput()
-	- Translate Ctrl-8 into NANO_DELETE_KEY (or NANO_BACKSPACE_KEY
-	  if REBIND_DELETE is set), since it apparently is generated
-	  sometimes even when keypad() is TRUE. (DLR)
-	- Translate KEY_SLEFT into NANO_BACK_KEY and KEY_SRIGHT into
-	  NANO_FORWARD_KEY, since they are sometimes generated by
-	  Shift-Left and Shift-Right. (DLR)
-  get_ascii_kbinput()
-	- Tweak to make it slightly more readable. (DLR)
-  get_verbatim_kbinput()
-	- Modify to take an extra parameter indicating if we should
-	  interpret ASCII codes or not. (DLR)
-  get_escape_seq_kbinput()
-	- Expand to deal with more broken terminals that don't generate
-	  keypad values.  Support the escape sequences for Insert,
-	  Delete, Home, End, PageUp, and PageDown, [arrow key],
-	  Ctrl-[arrow key], and Shift-[arrow key] when needed in the
-	  Linux console, the FreeBSD console, the Hurd console, xterm,
-	  rxvt, and Eterm.  Also, use get_verbatim_kbinput(), with ASCII
-	  interpretation disabled, to read in the sequences. (DLR)
-  get_skip_tilde_kbinput()
-	- Removed, as it is unneeded due to the expansion of
-	  get_escape_seq_kbinput(). (DLR)
-  get_mouseinput()
-	- Modify to take an extra parameter indicating if we should
-	  ungetch() the key equivalents of shortcuts we click on or not.
-	  (DLR)
-  nanogetstr()
-	- Properly interpret the Meta key value in misc if we hit it at
-	  the statusbar prompt. (DLR)
-  do_yesno()
-	- Add a few efficiency/extensibility tweaks. (David Benbennick)
-	- Convert to use the new low-level input functions, and remove
-	  two last hardcoded widths left after the above tweaks. (DLR)
-  do_replace_highlight()
-	- Display a highlighted space if the word length is zero, so
-	  that we can see zero-length regexes we're replacing. (DLR;
-	  suggested by Mike Frysinger)
-- configure.ac:
-	- Check for glib 2.x and then 1.2.x if we need glib. (DLR)
-- faq.html:
-	- Add question explaining how verbatim input works, as well as a
-	  few minor fixes. (DLR)
-- nano.1, nanorc.5:
-	- Add nano version numbers (minus any "-cvs" suffixes). (DLR)
-- nano.spec.in:
-	- Update for the 1.3 branch of nano. (DLR)
-- NEWS:
-	- Reformat so all lines are limited to 72 columns, add a few
-	  typo fixes, and make a few minor cosmetic cleanups. (DLR)
-- THANKS:
-	- Add Danilo Segan, for the Serbian translation.
-
-GNU nano 1.3.0 - 2003.10.22
-- General:
-	- Complete overhaul and abstraction of the lowest level of
-	  keyboard input, mostly rewritten but incorporating a few bits
-	  from the old functions and adding support for Pico's Esc Esc
-	  [three-digit decimal ASCII code] input method.  New functions
-	  get_kbinput(), get_verbatim_kbinput(), get_ignored_kbinput(),
-	  get_accepted_kbinput(), get_ascii_kbinput(),
-	  get_escape_seq_kbinput(), and get_skip_tilde_kbinput().  These
-	  should work properly on FreeBSD (due to code and input
-	  provided by Lee Nelson and Wouter van Hemel, respectively).
-	  (DLR)
-	- The -K/--keypad command line/rcfile option has been removed,
-	  and keypad() is now always TRUE.  keypad_on() in winio.c and
-	  the check for _use_keypad in configure.ac have both been
-	  removed. (DLR)
-	- The -d/--rebinddelete command line/rcfile option, equivalent
-	  to Pico's -d, has been added.  It is intended to work around
-	  the problem with Backspace/Delete confusion on some terminals,
-	  notably FreeBSD; if your Backspace key acts like Delete, this
-	  option will fix that. (DLR)
-	- Remove unneeded breaks at the ends of default: clauses. (DLR)
-	- Add the ability to repeat the last search without prompting
-	  via Meta-W, and move the line wrapping toggle to Meta-L.  New
-	  function do_research(). (Wouter van Hemel)
-	- Added the ability to move to the beginning or end of the
-	  paragraph, which Pico has via ^W^W (previous paragraph)
-	  and ^W^O (next paragraph).  Modifications to do_justify(),
-	  new functions do_para_operation(), do_para_begin(), and
-	  do_para_end().  Note that the last three functions are
-	  disabled if justification is disabled. (DLR)
-	- Make sure the "historylog" option isn't included at all if
-	  NANO_SMALL is defined. (DLR)
-	- Source reorganization: move code to src/, docs to doc/.
-	  (Jordi)
-	- Translation updates (see po/ChangeLog for details).
-	- Since SAMELINEWRAP is only used in nano.c, make it a static
-	  variable in nano.c instead of a flag, and surround all
-	  wrap_reset() calls with DISABLE_WRAPPING #ifdefs. (DLR)
-	- Change enum "topmidbotnone" to "topmidnone", as there's no
-	  BOTTOM option anymore. (DLR)
-	- Split out the string-displaying routine from update_line()
-	  into a separate function; convert the edit window, statusbar
-	  display, and statusbar prompt to use it, so that they can all
-	  properly display control characters and tabs; free and NULL
-	  the backup search string in one place in the search code
-	  instead of several; and do some other minor refactoring of
-	  related display functions to simplify them.  New functions
-	  mark_order() and display_string(); changes to actual_x(),
-	  strnlenpt(), blank_bottombars(), blank_edit(),
-	  get_page_start(), edit_add(), update_line(), statusbar(), and
-	  do_replace_highlight(). (David Benbennick)  DLR: Add minor
-	  cosmetic tweaks, add missing NANO_SMALL #ifdef around the text
-	  for a backwards search in the refactored code, and enclose
-	  dump_buffer() and dump_buffer_reverse() in one ENABLE_DEBUG
-	  #ifdef instead of two.
-	- Convert memmove() function calls to charmove() macro calls, as
-	  the former all work on char*'s. (DLR)
-	- Miscellaneous #define cleanups: only include the prototype for
-	  and definition of wrap_at if wrapping and/or justification are
-	  enabled, remove duplicate wrap_at prototype, and define
-	  DISABLE_MOUSE if NCURSES_MOUSE_VERSION isn't defined in nano.h
-	  instead of all over the code. (DLR)
-	- Autogenerate the html versions of the manpages in the
-	  Makefile.am's in doc/man/, make sure that they're properly
-	  installed via "make dist", and make sure that "make distcheck"
-	  works too.  Also be sure to set EXTRA_DIST properly. (Jordi,
-	  DLR and Jeff Bailey)
-- files.c:
-  read_file()
-	- After we've read in a file and possibly converted it from
-	  DOS/Mac format, set fileformat back to 0 to prevent erroneous
-	  conversion messages when we read other files in. (DLR)
-  do_browser()
-	- Some of the Pico compatibility options in the file browser
-	  that don't work properly for current Pico have been removed.
-	  Backspace, 'g', 'l', 'q', and 'u' are invalid.  'd' deletes
-	  the highlighted file, and 'r' renames the highlighted file;
-	  neither of these are implemented. (DLR)
-- global.c:
-  toggle_init()
-	- Change the message for the line wrapping toggle from "Auto
-	  wrap" to "Auto line wrap", to more clearly associate it with
-	  Meta-L. (DLR)
-  shortcut_init()
-	- Change multibuffer-enabled references to
-	  opening/closing/toggling the previous/next loaded file to
-	  toggling/switching to/closing the previous/next file buffer,
-	  for consistency with other references. (DLR)
-- nano.c:
-  window_init()
-	- Set keypad() to TRUE regardless of whether PDCurses is being
-	  used, as Meta-X apparently turns it off even under ncurses.
-	  (DLR)
-  do_backspace()
-	- Vastly simplify, and remove dependency on page_up(). (David
-	  Benbennick)
-  help_init()
-	- Document the support for Esc Esc [character]'s being
-	  interpreted as Ctrl-[character], and the support for Pico's
-	  Esc Esc [three-digit decimal ASCII code] input method. (DLR)
-  do_mark()
-	- Toggle MARK_ISSET at the beginning of the function instead of
-	  setting it in one place and unsetting it in another place.
-	  (David Benbennick)
-  do_suspend()
-	- Use handle_hupterm() to handle SIGHUP and SIGTERM so we can
-	  properly deal with them while nano is suspended. (DLR; problem
-	  found by David Benbennick)
-  abcd()
-	- Removed, as it's unneeded due to the low-level input overhaul.
-	  (DLR)
-- nano.h:
-	- Define KEY_RESIZE and KEY_SUSPEND as -1 when slang is used, as
-	  slang has no equivalent of either.  When nano is compiled with
-	  slang support, resizing the window doesn't generate
-	  KEY_RESIZE, and pressing Ctrl-Z to suspend nano at the Linux
-	  console with keypad(TRUE) generates Ctrl-Z instead of
-	  KEY_SUSPEND, both unlike ncurses. (DLR)
-	- Define KEY_RESIZE as -1 if it isn't defined, as it isn't in
-	  the curses library included with SunOS 5.7-5.9.  Also define
-	  KEY_SUSPEND as -1 if it isn't defined, in case it isn't in
-	  more than just Slang. (DLR)
-	- Define all potentially missing keys as different negative
-	  values (ERR is -1, so use -2, -3, etc.) so as to avoid having
-	  duplicate case values when keys are missing. (DLR)
-- move.c:
-	- Remove unneeded inclusion of stdio.h, make various cleanups,
-	  and preserve the cursor's coordinates when paging up and down.
-	  (David Benbennick)  DLR: Readd the ability to behave the old
-	  way while paging, make it so the new behavior is only used in
-	  smooth-scrolling mode, and modify page_down() to always go
-	  down a full page (even when there's less than one page of text
-	  left) for consistency.
-  page_up()
-	- Removed due to rewrite of movement functions. (David
-	  Benbennick)
-- proto.h:
-	- Surround the do_prev_word() and do_next_word() prototypes with
-	  NANO_SMALL #ifdefs, since the actual functions aren't included
-	  in tiny mode. (DLR)
-- rcfile.c:
-  parse_colors()
-	- Generate an error if we try to use a bright background color
-	  in a nanorc file. (DLR; found by Brand Huntsman)
-	- Make sure all rcfile error messages are capitalized, for
-	  consistency. (DLR)
-- winio.c:
-  get_verbatim_kbinput()
-	- Fix a silly memory corruption bug that would occur when trying
-	  to read a sequence of more than one key verbatim. (DLR)
-  get_accepted_kbinput()
-	  Handle Ctrl-{ to Ctrl-~ correctly, and drop support for
-	  converting Esc ` to Esc Space, since making Meta-[key]
-	  correspond to Ctrl-[key] in all cases is inconsistent due to
-	  the different natures of Contol and Meta key sequences. (DLR)
-  do_first_line()
-	- Call edit_update() with TOP instead of CENTER; both do the
-	  same thing, but it works faster with TOP. (DLR)
-  nanogetstr()
-	- Don't let the user type in ASCII 127 at the statusbar prompt.
-	  (DLR)
   titlebar()
 	- Fix problem with the available space for a filename on the
 	  titlebar's being short by one. (DLR)
-  edit_add()
-	- Fix problems with the marking highlight's being drawn
-	  improperly in some cases. (DLR)
-  edit_update()
-	- Tweak for efficiency and remove the fix_editbot() call. (David
-	  Benbennick)
   do_credits()
 	- Update the copyright years to "1999-2003", to match those
 	  given in the rest of the code. (DLR)
-- configure.ac:
-	- Change instances of "GNU Nano" to "GNU nano" for consistency.
-	  (DLR)
-- nano.1, nanorc.5, nano.texi:
-	- Change all instances of $SYSCONFDIR to SYSCONFDIR, since
-	  SYSCONFDIR is set at compile time and can't be overridden by
-	  setting SYSCONFDIR in the environment. (David Benbennick)
-	- Remove -K/--keypad, and document -d/--rebinddelete. (DLR)
-	- Document the support for Esc Esc [character]'s being
-	  interpreted as Ctrl-[character], and the support for Pico's
-	  Esc Esc [three-digit decimal ASCII code] input method, if
-	  applicable. (DLR)
-	- French translation by Jean-Philippe Guérard.
-- nano.1.html, nanorc.5.html:
-	- Regenerated. (DLR)
 - nanorc.sample:
-	- Remove duplicate "historylog" entry, remove "keypad" entry,
-	  and add "rebinddelete" entry. (DLR)
-	- Update and add comments to the regexes for nanorc files.
-	  (Brand Huntsman)
-	- Fix an attempt at a bright background color in the sample Java
-	  source regexes. (DLR)
-	- Since tabs are shown as groups of spaces, they are interpreted
-	  as such when parsed by color regexes.  Accordingly, simplify
-	  regexes that handle both spaces and tabs to just handle
-	  spaces, as the results are the same. (DLR)
-- AUTHORS
+	- Remove duplicate "historylog" entry. (DLR)
+- AUTHORS:
 	- Updated to show 1.2/1.3 maintainers.
+- THANKS:
+	- Added Danilo Segan for the Serbian translation.
 
 - 1.3 tree forks here
 
@@ -659,7 +238,7 @@ GNU nano 1.1.99pre3 - 2003.02.13
 - files.c:
   cwd_tab_completion()
 	- Memory leak fix (David Benbennick).
-  input_tab()
+  intput_tab()
 	- Fix assumption that matches is null terminated (David
 	  Benbennick).
   load_history()
