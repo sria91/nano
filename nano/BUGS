@@ -100,7 +100,7 @@
 - Cut to end cutting (-k) causes segfaults (try cutting "- Backup making
   (filename~)?" line in TODO file) (discovered by
   higuita@cadernoverde.com) (54) [FIXED].
-- When using autoindent (-i), wrapped text does not get autoindented
+- When using autoindent (-i), wrapped text does not get auto-indented
   (55, discovered by Mark Senior) [FIXED].
 - When using -R (regex) and -p (pico mode), subsequent searches after
   the first fail if no string is entered (56) [FIXED].
@@ -112,7 +112,7 @@
   Corsi) (58) [FIXED].
 - When page up is used after two page down's, the screen doesn't update
   properly (discovered by David Lawrence Ramsey) (59) [FIXED].
-- On BSD systems, marked cutting sna paste often screws up the
+- On BSD systenms, marked cutting sna paste often screws up the 
   last line in the cutbuffer (discovered by Barry Pederson) (60) [FIXED]
 - Blank lines are not kept when cutting with -k (discovered by Rocco)
   (61) [FIXED].
@@ -122,11 +122,14 @@
 - If you change search options but don't change the search string in
   normal mode, hitting  enter causes the search/replace to abort (64)
   (Jordi Mallach) [FIXED].
-- Cutting one line of text causes the screen to recenter the line
+- Cutting one line of text cause the screen to recenter the line 
   (reported and fixed by David Lawrence Ramsey) (65) [FIXED].
-- When cutting marked text including the bottom of the file, a new   
+- When cutting marked text including the bottom of the file, a new
   "magic line" is not created" (reported by David Lawrence
   Ramsey, fixed by David Lawrence Ramsey & Chris) (66) [FIXED].
+- The spell checker prompts whether you want to replace occurences of a
+  word even if you didn't alter it on the status bar (fixed by Rocco
+  Corsi) (67) [FIXED].
 
 ** Open BUGS **
 
