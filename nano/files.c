@@ -54,7 +54,7 @@ void load_file(void)
 void new_file(void)
 {
     fileage = nmalloc(sizeof(filestruct));
-    fileage->data = charalloc(1);
+    fileage->data = nmalloc(1);
     strcpy(fileage->data, "");
     fileage->prev = NULL;
     fileage->next = NULL;
@@ -96,7 +96,7 @@ filestruct *read_line(char *buf, filestruct * prev, int *line1ins)
     filestruct *fileptr;
 
     fileptr = nmalloc(sizeof(filestruct));
-    fileptr->data = charalloc(strlen(buf) + 2);
+    fileptr->data = nmalloc(strlen(buf) + 2);
     strcpy(fileptr->data, buf);
 
     if (*line1ins) {
@@ -137,7 +137,7 @@ int read_file(int fd, char *filename)
     filestruct *fileptr = current, *tmp = NULL;
     int line1ins = 0;
 
-    buf = charalloc(bufx);
+    buf = nmalloc(bufx);
     buf[0] = '\0';
 
     if (fileptr != NULL && fileptr->prev != NULL) {
@@ -259,13 +259,7 @@ int do_insertfile(void)
     char *realname = NULL;
 
     wrap_reset();
-
-#ifndef DISABLE_MOUSE
-    currshortcut = insertfile_list;
-    currslen = INSERTFILE_LIST_LEN;
-#endif
-
-    i = statusq(1, insertfile_list, INSERTFILE_LIST_LEN, "",
+    i = statusq(1, writefile_list, WRITEFILE_LIST_LEN, "",
 		_("File to insert [from ./] "));
     if (i != -1) {
 
@@ -283,10 +277,6 @@ int do_insertfile(void)
 	if (i == NANO_TOFILES_KEY) {
 	    
 	    char *tmp = do_browse_from(realname);
-#ifndef DISABLE_MOUSE
-	    currshortcut = insertfile_list;
-	    currslen = INSERTFILE_LIST_LEN;
-#endif
 
 #ifdef DISABLE_TABCOMP
 	    realname = NULL;
@@ -331,14 +321,8 @@ int do_insertfile(void)
  * 
  * tmp means we are writing a tmp file in a secure fashion.  We use
  * it when spell checking or dumping the file on an error.
- *
- * append means, not surprisingly, whether we are appending instead
- * of overwriting.
- *
- * nonamechange means don't change the current filename, it is ignored
- * if tmp == 1.
  */
-int write_file(char *name, int tmp, int append, int nonamechange)
+int write_file(char *name, int tmp)
 {
     long size, lineswritten = 0;
     static char *buf = NULL;
@@ -383,9 +367,7 @@ int write_file(char *name, int tmp, int append, int nonamechange)
     else if (ISSET(FOLLOW_SYMLINKS) || !S_ISLNK(lst.st_mode) || tmp) {
 	/* Use O_EXCL if tmp == 1.  This is now copied from joe, because
 	   wiggy says so *shrug*. */
-	if (append)
-	    fd = open(realname, O_WRONLY | O_APPEND, (S_IRUSR|S_IWUSR));
-	else if (tmp)
+	if (tmp)
 	    fd = open(realname, O_WRONLY | O_CREAT | O_EXCL, (S_IRUSR|S_IWUSR));
 	else
 	    fd = open(realname, O_WRONLY | O_CREAT | O_TRUNC, (S_IRUSR|S_IWUSR));
@@ -394,7 +376,7 @@ int write_file(char *name, int tmp, int append, int nonamechange)
 	if (fd == -1) {
 	    if (!tmp && ISSET(TEMP_OPT)) {
 		UNSET(TEMP_OPT);
-		return do_writeout(filename, 1, 0);
+		return do_writeout(filename, 1);
 	    }
 	    statusbar(_("Could not open file for writing: %s"),
 		      strerror(errno));
@@ -404,13 +386,13 @@ int write_file(char *name, int tmp, int append, int nonamechange)
     }
     /* Don't follow symlink.  Create new file. */
     else {
-	buf = charalloc(strlen(realname) + 8);
+	buf = nmalloc(strlen(realname) + 8);
 	strncpy(buf, realname, strlen(realname)+1);
 	strcat(buf, ".XXXXXX");
 	if ((fd = mkstemp(buf)) == -1) {
 	    if (ISSET(TEMP_OPT)) {
 		UNSET(TEMP_OPT);
-		return do_writeout(filename, 1, 0);
+		return do_writeout(filename, 1);
 	    }
 	    statusbar(_("Could not open file for writing: %s"),
 		      strerror(errno));
@@ -448,7 +430,6 @@ int write_file(char *name, int tmp, int append, int nonamechange)
 	    return -1;
 	} else if (size > 0) {
 	    size = write(fd, "\n", 1);
-	    lineswritten++;
 	    if (size == -1) {
 		statusbar(_("Could not open file for writing: %s"),
 			  strerror(errno));
@@ -467,7 +448,7 @@ int write_file(char *name, int tmp, int append, int nonamechange)
     if (realexists == -1 || tmp ||
 	(!ISSET(FOLLOW_SYMLINKS) && S_ISLNK(lst.st_mode))) {
 
-	/* Use default umask as file permissions if file is a new file. */
+	/* Use default umask as file permisions if file is a new file. */
 	mask = umask(0);
 	umask(mask);
 
@@ -507,9 +488,7 @@ int write_file(char *name, int tmp, int append, int nonamechange)
 		  mask, realname, strerror(errno));
 
     if (!tmp) {
-	if (!nonamechange)
-	    filename = mallocstrcpy(filename, realname);
-
+	filename = mallocstrcpy(filename, realname);
 	statusbar(_("Wrote %d lines"), lineswritten);
 	UNSET(MODIFIED);
 	titlebar(NULL);
@@ -517,7 +496,7 @@ int write_file(char *name, int tmp, int append, int nonamechange)
     return 1;
 }
 
-int do_writeout(char *path, int exiting, int append)
+int do_writeout(char *path, int exiting)
 {
     int i = 0;
 
@@ -525,16 +504,11 @@ int do_writeout(char *path, int exiting, int append)
     static int did_cred = 0;
 #endif
 
-#ifndef DISABLE_MOUSE
-    currshortcut = writefile_list;
-    currslen = WRITEFILE_LIST_LEN;
-#endif
-
     answer = mallocstrcpy(answer, path);
 
     if ((exiting) && (ISSET(TEMP_OPT))) {
 	if (filename[0]) {
-	    i = write_file(answer, 0, 0, 0);
+	    i = write_file(answer, 0);
 	    display_main_list();
 	    return i;
 	} else {
@@ -547,14 +521,8 @@ int do_writeout(char *path, int exiting, int append)
     }
 
     while (1) {
-#ifndef NANO_SMALL
-	if (ISSET(MARK_ISSET) && !exiting)
-	    i = statusq(1, writefile_list, WRITEFILE_LIST_LEN, "",
-		    _("%s Selection to File"), append ? _("Append") : _("Write"));
-	else
-#endif
-	    i = statusq(1, writefile_list, WRITEFILE_LIST_LEN, answer,
-		    _("File Name to %s"), append ? _("Append") : _("Write"));
+	i = statusq(1, writefile_list, WRITEFILE_LIST_LEN, answer,
+		    _("File Name to write"));
 
 	if (i != -1) {
 
@@ -563,19 +531,12 @@ int do_writeout(char *path, int exiting, int append)
 
 	    char *tmp = do_browse_from(answer);
 
-#ifndef DISABLE_MOUSE
-	    currshortcut = writefile_list;
-	    currslen = WRITEFILE_LIST_LEN;
-#endif
-
-	    if (tmp != NULL) {
+	    if (tmp != NULL)
 		answer = mallocstrcpy(answer, tmp);
-	    } else
-		return do_writeout(answer, exiting, append);
-	} else
+	    else
+		return do_writeout(answer, exiting);
+	}
 #endif
-	if (i == NANO_APPEND_KEY)
-	    return(do_writeout(answer, exiting, 1 - append));
 
 #ifdef DEBUG
 	    fprintf(stderr, _("filename is %s"), answer);
@@ -589,7 +550,7 @@ int do_writeout(char *path, int exiting, int append)
 		return -1;
 	    }
 #endif
-	    if (!append && strcmp(answer, filename)) {
+	    if (strcmp(answer, filename)) {
 		struct stat st;
 		if (!stat(answer, &st)) {
 		    i = do_yesno(0, 0, _("File exists, OVERWRITE ?"));
@@ -598,46 +559,8 @@ int do_writeout(char *path, int exiting, int append)
 			continue;
 		}
 	    }
-#ifndef NANO_SMALL
+	    i = write_file(answer, 0);
 
-	/* Here's where we allow the selected text to be written to 
-	   a separate file. */
-	if (ISSET(MARK_ISSET) && !exiting) {
-	    filestruct *fileagebak = fileage;	
-	    filestruct *filebotbak = filebot;
-	    filestruct *cutback = cutbuffer;
-	    int oldmod = 0;
-	    cutbuffer = NULL;
-
-	    /* Okay, since write_file changes the filename, back it up */
-	    if (ISSET(MODIFIED))
-		oldmod = 1;
-
-	    /* Now, non-destructively add the marked text to the
-	       cutbuffer, and write the file out using the cutbuffer ;) */
-	    if (current->lineno <= mark_beginbuf->lineno)
-		cut_marked_segment(current, current_x, mark_beginbuf,
-				mark_beginx, 0);
-	    else
-		cut_marked_segment(mark_beginbuf, mark_beginx, current,
-				current_x, 0);
-
-	    fileage = cutbuffer;
-	    for (filebot = cutbuffer; filebot->next != NULL; 
-			filebot = filebot->next)
-		;
-	    i = write_file(answer, 0, append, 1);
-
-	    /* Now restore everything */
-	    fileage = fileagebak;
-	    filebot = filebotbak;
-	    cutbuffer = cutback;
-	    if (oldmod)
-		set_modified();
-	} else
-#endif
-	    i = write_file(answer, 0, append, 0);
-	
 	    display_main_list();
 	    return i;
 	} else {
@@ -650,7 +573,7 @@ int do_writeout(char *path, int exiting, int append)
 
 int do_writeout_void(void)
 {
-    return do_writeout(filename, 0, 0);
+    return do_writeout(filename, 0);
 }
 
 #ifndef DISABLE_TABCOMP
@@ -672,7 +595,7 @@ char *real_dir_from_tilde(char *buf)
 	    if (getenv("HOME") != NULL) {
 
 		free(dirtmp);
-		dirtmp = charalloc(strlen(buf) + 2 + strlen(getenv("HOME")));
+		dirtmp = nmalloc(strlen(buf) + 2 + strlen(getenv("HOME")));
 
 		sprintf(dirtmp, "%s%s", getenv("HOME"), &buf[1]);
 
@@ -696,7 +619,7 @@ char *real_dir_from_tilde(char *buf)
 	    if (userdata != NULL) {  /* User found */
 
 	        free(dirtmp);
-		dirtmp = charalloc(strlen(buf) + 2 + strlen(userdata->pw_dir));
+		dirtmp = nmalloc(strlen(buf) + 2 + strlen(userdata->pw_dir));
 		sprintf(dirtmp, "%s%s", userdata->pw_dir, &buf[i]);
 
 	    }
@@ -771,7 +694,7 @@ char **username_tab_completion(char *buf, int *num_matches)
 	     * This makes a lot more sense to me (Chris) this way...
 	     */
 
-	    matchline = charalloc(strlen(userdata->pw_name) + 2);
+	    matchline = nmalloc(strlen(userdata->pw_name) + 2);
 	    sprintf(matchline, "~%s", userdata->pw_name);
 	    matches[*num_matches] = matchline;
 	    ++*num_matches;
@@ -803,7 +726,7 @@ char **cwd_tab_completion(char *buf, int *num_matches)
 
     /* Okie, if there's a / in the buffer, strip out the directory part */
     if (strcmp(buf, "") && strstr(buf, "/")) {
-	dirName = charalloc(strlen(buf) + 1);
+	dirName = nmalloc(strlen(buf) + 1);
 	tmp = buf + strlen(buf);
 	while (*tmp != '/' && tmp != buf)
 	    tmp--;
@@ -862,7 +785,7 @@ char **cwd_tab_completion(char *buf, int *num_matches)
 	     * This makes a lot more sense to me (Chris) this way...
 	     */
 	    tmp2 = NULL;
-	    tmp2 = charalloc(strlen(next->d_name) + 1);
+	    tmp2 = nmalloc(strlen(next->d_name) + 1);
 	    strcpy(tmp2, next->d_name);
 	    matches[*num_matches] = tmp2;
 	    ++*num_matches;
@@ -1027,7 +950,7 @@ char *input_tab(char *buf, int place, int *lastWasTab, int *newplace)
 	    if (longestname > COLS - 1)
 		longestname = COLS - 1;
 
-	    foo = charalloc(longestname + 5);
+	    foo = nmalloc(longestname + 5);
 
 	    /* Print the list of matches */
 	    for (i = 0, col = 0; i < num_matches; i++) {
@@ -1132,7 +1055,7 @@ char **browser_init(char *path, int *longest, int *numents)
     while ((next = readdir(dir)) != NULL) {
 	if (!strcmp(next->d_name, "."))
 	   continue;
-	filelist[i] = charalloc(strlen(next->d_name) + strlen(path) + 2);
+	filelist[i] = nmalloc(strlen(next->d_name) + strlen(path) + 2);
 
 	if (!strcmp(path, "/"))
 	    snprintf(filelist[i], strlen(next->d_name) + strlen(path) + 1, 
@@ -1208,11 +1131,6 @@ char *do_browser(char *inpath)
     int col = 0, selected = 0, editline = 0, width = 0, filecols = 0;
     int lineno = 0, kb;
     char **filelist = (char **) NULL;
-#ifndef DISABLE_MOUSE
-#ifdef NCURSES_MOUSE_VERSION
-    MEVENT mevent;
-#endif
-#endif
 
     /* If path isn't the same as inpath, we are being passed a new
 	dir as an arg.  We free it here so it will be copied from 
@@ -1227,7 +1145,7 @@ char *do_browser(char *inpath)
 	path = mallocstrcpy(path, inpath);
 
     filelist = browser_init(path, &longest, &numents);
-    foo = charalloc(longest + 8);
+    foo = nmalloc(longest + 8);
 
     /* Sort the list by directory first, then alphabetically */
     qsort(filelist, numents, sizeof(char *), diralphasort);
@@ -1243,15 +1161,8 @@ char *do_browser(char *inpath)
 
     /* Loop invariant: Microsoft sucks. */
     do {
-	DIR *test_dir;
-
-	blank_statusbar_refresh();
-
-#ifndef DISABLE_MOUSE
-	currshortcut = browser_list;
-	currslen = BROWSER_LIST_LEN;
-#endif
-
+	blank_edit();
+	blank_statusbar();
  	editline = 0;
 	col = 0;
 	    
@@ -1262,42 +1173,6 @@ char *do_browser(char *inpath)
 	    lineno = selected / width;
 
 	switch (kbinput) {
-
-#ifndef DISABLE_MOUSE
-#ifdef NCURSES_MOUSE_VERSION
-        case KEY_MOUSE:
-	    if (getmouse(&mevent) == ERR)
-	        return retval;
- 
-	    /* If they clicked in the edit window, they probably clicked
-		on a file */
- 	    if (wenclose(edit, mevent.y, mevent.x)) { 
-		int selectedbackup = selected;
-
-		mevent.y -= 2;
-
-		/* If we're on line 0, don't toy with finding out what
-			page we're on */
-		if (lineno / editwinrows == 0)
-		    selected = mevent.y * width + mevent.x / longest;
-		else
-		    selected = (lineno / editwinrows) * editwinrows * width 
-			+ mevent.y * width + mevent.x / longest;
-
-		/* If we're off the screen, reset to the last item.
-		   If we clicked where we did last time, select this name! */
-		if (selected > numents - 1)
-		    selected = numents - 1;
-		else if (selectedbackup == selected) {
-		    ungetch('s');	/* Unget the 'select' key */
-		    break;
-		}
-	    } else	/* Must be clicking a shortcut */
-		do_mouse();
-
-            break;
-#endif
-#endif
 	case KEY_UP:
 	case 'u':
 	    if (selected - width >= 0)
@@ -1358,23 +1233,20 @@ char *do_browser(char *inpath)
 	case 'S':
 
 	    /* You can't cd up from / */
-	    if (!strcmp(filelist[selected], "/..") && !strcmp(path, "/")) {
+	    if (!strcmp(filelist[selected], "/..") && !strcmp(path, "/"))
 		statusbar(_("Can't move up a directory"));
-		break;
-	    }
-
-	    path = mallocstrcpy(path, filelist[selected]);
+	    else
+		path = mallocstrcpy(path, filelist[selected]);
 
 	    st = filestat(path);
 	    if (S_ISDIR(st.st_mode)) {
-		if ((test_dir = opendir(path)) == NULL) {
+		if (opendir(path) == NULL) {
 		    /* We can't open this dir for some reason.  Complain */
 		    statusbar(_("Can't open \"%s\": %s"), path, strerror(errno));
-		    striponedir(path);
+		    striponedir(path);		    
 		    align(&path);
 		    break;
 		} 
-		closedir(test_dir);
 
 		if (!strcmp("..", tail(path))) {
 		    /* They want to go up a level, so strip off .. and the
@@ -1391,43 +1263,7 @@ char *do_browser(char *inpath)
 		abort = 1;
 	    }
 	    break;
-	/* Goto a specific directory */
-	case 'g':	/* Pico compatibility */
-	case 'G':
-	case NANO_GOTO_KEY:
-
-	    curs_set(1);
-	    j = statusq(0, gotodir_list, GOTODIR_LIST_LEN, "", _("Goto Directory"));
-	    bottombars(browser_list, BROWSER_LIST_LEN);
-	    curs_set(0);
-
-	    if (j < 0) {
-		statusbar(_("Goto Cancelled"));
-		break;
-	    }
-
-	    if (answer[0] != '/') {
-		char *saveanswer = NULL;
-
-		saveanswer = mallocstrcpy(saveanswer, answer);
-		answer = realloc(answer, strlen(path) + strlen(saveanswer) + 2);
-		sprintf(answer, "%s/%s", path, saveanswer);
-		free(saveanswer);
-	    }
-
-	    if ((test_dir = opendir(answer)) == NULL) {
-		/* We can't open this dir for some reason.  Complain */
-		statusbar(_("Can't open \"%s\": %s"), answer, strerror(errno));
-		break;
-	    } 
-	    closedir(test_dir);
-
-	    /* Start over again with the new path value */
-	    path = mallocstrcpy(path, answer);
-	    return do_browser(path);
-
 	/* Stuff we want to abort the browser */
-	case NANO_CONTROL_C:
 	case 'q':
 	case 'Q':
 	case 'e':	/* Pico compatibility, yeech */
@@ -1438,8 +1274,6 @@ char *do_browser(char *inpath)
 	}
 	if (abort)
 	    break;
-
-	blank_edit();
 
 	if (width)
 	    i = width * editwinrows * ((selected / width) / editwinrows);
@@ -1485,23 +1319,12 @@ char *do_browser(char *inpath)
 			(int) st.st_size >> 10);
 	    }
 
-	    /* Hilight the currently selected file/dir */
-	    if (j == selected) {
-#ifdef ENABLE_COLOR
-		color_on(edit, COLOR_STATUSBAR);
-#else
+	    /* Highlight the currently selected file/dir */
+	    if (j == selected)
 		wattron(edit, A_REVERSE);
-
-#endif
-	    }
 	    waddnstr(edit, foo, strlen(foo));
-	    if (j == selected) {
-#ifdef ENABLE_COLOR
-		color_off(edit, COLOR_STATUSBAR);
-#else
+	    if (j == selected)
 		wattroff(edit, A_REVERSE);
-#endif
-	    }
 
 	    /* And add some space between the cols */
 	    waddstr(edit, "  ");

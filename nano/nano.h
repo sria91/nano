@@ -34,7 +34,6 @@
 #define SET(bit) flags |= bit
 #define UNSET(bit) flags &= ~bit
 #define ISSET(bit) (flags & bit)
-#define TOGGLE(bit) flags ^= bit
 
 
 #ifdef USE_SLANG	/* Slang support enabled */
@@ -64,10 +63,6 @@
 
 #define VERMSG "GNU nano " VERSION
 
-#if defined(DISABLE_WRAPPING) && defined(DISABLE_JUSTIFY)
-#define DISABLE_WRAPJUSTIFY 1
-#endif
-
 /* Structure types */
 typedef struct filestruct {
     char *data;
@@ -95,14 +90,6 @@ typedef struct toggle {
    int flag;		/* What flag actually gets toggled */
 } toggle;
 
-#ifdef ENABLE_NANORC
-typedef struct rcoption {
-   char *name;
-   int flag;
-} rcoption;
- 
-#endif /* ENABLE_NANORC */
-
 /* Bitwise flags so we can save space (or more correctly, not waste it) */
 
 #define MODIFIED		(1<<0)
@@ -124,7 +111,6 @@ typedef struct rcoption {
 #define TEMP_OPT         	(1<<16)
 #define CUT_TO_END         	(1<<17)
 #define DISABLE_CURPOS         	(1<<18)
-#define REVERSE_SEARCH		(1<<19)
 
 /* Control key sequences, changing these would be very very bad */
 
@@ -222,6 +208,7 @@ know what you're doing */
 #define NANO_FIRSTLINE_KEY	NANO_PREVPAGE_KEY
 #define NANO_LASTLINE_KEY	NANO_NEXTPAGE_KEY
 #define NANO_CANCEL_KEY		NANO_CONTROL_C
+#define NANO_CASE_KEY		NANO_CONTROL_A
 #define NANO_REFRESH_KEY	NANO_CONTROL_L
 #define NANO_JUSTIFY_KEY	NANO_CONTROL_J
 #define NANO_JUSTIFY_FKEY	KEY_F(4)
@@ -240,7 +227,6 @@ know what you're doing */
 #define NANO_ENTER_KEY		NANO_CONTROL_M
 #define NANO_FROMSEARCHTOGOTO_KEY NANO_CONTROL_T
 #define NANO_TOFILES_KEY	NANO_CONTROL_T
-#define NANO_APPEND_KEY		NANO_ALT_A
 
 #define TOGGLE_CONST_KEY	NANO_ALT_C
 #define TOGGLE_AUTOINDENT_KEY	NANO_ALT_I
@@ -251,36 +237,27 @@ know what you're doing */
 #define TOGGLE_CUTTOEND_KEY	NANO_ALT_K
 #define TOGGLE_REGEXP_KEY	NANO_ALT_E
 #define TOGGLE_WRAP_KEY		NANO_ALT_W
-#define TOGGLE_BACKWARDS_KEY	NANO_ALT_B
-#define TOGGLE_CASE_KEY		NANO_ALT_A
-
-/* Toggle stuff, these static lengths need to go away RSN */
-
-#ifdef HAVE_REGEX_H
-#define TOGGLE_LEN 11
-#define WHEREIS_LIST_LEN 8
-#define REPLACE_LIST_LEN 8
-#else
-#define TOGGLE_LEN 10
-#define WHEREIS_LIST_LEN 7
-#define REPLACE_LIST_LEN 7
-#endif
 
 #define MAIN_LIST_LEN 26
 #define MAIN_VISIBLE 12
+#define WHEREIS_LIST_LEN 6
+#define REPLACE_LIST_LEN 6
 #define REPLACE_LIST_2_LEN 3
 #define GOTO_LIST_LEN 3
-#define GOTODIR_LIST_LEN 1
 #define HELP_LIST_LEN 3
 #define SPELL_LIST_LEN 1
 
 #ifndef DISABLE_BROWSER
-#define WRITEFILE_LIST_LEN 3
-#define INSERTFILE_LIST_LEN 2
-#define BROWSER_LIST_LEN 4
+#define WRITEFILE_LIST_LEN 2
+#define BROWSER_LIST_LEN 3
 #else
-#define WRITEFILE_LIST_LEN 3
-#define IMSERTFILE_LIST_LEN 1
+#define WRITEFILE_LIST_LEN 1
+#endif
+
+#ifdef HAVE_REGEX_H
+#define TOGGLE_LEN 9
+#else
+#define TOGGLE_LEN 8
 #endif
 
 #define VIEW 1
@@ -298,26 +275,5 @@ know what you're doing */
 
 /* Minimum fill length (space available for text before wrapping occurs) */
 #define MIN_FILL_LENGTH 10
-
-/* Color specific defines */
-#ifdef ENABLE_COLOR
-typedef struct colorstruct {
-    int fg;
-    int bg;
-    int bold;
-    int set;
-} colorstruct;
-
-#define FIRST_COLORNUM 16
-
-#define COLOR_TITLEBAR 16
-#define COLOR_BOTTOMBARS 17
-#define COLOR_STATUSBAR 18
-#define COLOR_TEXT 19
-#define COLOR_MARKER 20
-
-#define NUM_NCOLORS 5
-
-#endif /* ENABLE_COLOR */
 
 #endif /* ifndef NANO_H */ 

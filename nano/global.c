@@ -71,31 +71,16 @@ char *help_text;		/* The text in the help window */
 filestruct *mark_beginbuf;	/* the begin marker buffer */
 int mark_beginx;		/* X value in the string to start */
 
-#ifndef DISABLE_SPELLER
-char *alt_speller;		/* Alternative spell command */
-#endif
-
 shortcut main_list[MAIN_LIST_LEN];
 shortcut whereis_list[WHEREIS_LIST_LEN];
 shortcut replace_list[REPLACE_LIST_LEN];
 shortcut replace_list_2[REPLACE_LIST_LEN]; /* 2nd half of replace dialog */
 shortcut goto_list[GOTO_LIST_LEN];
-shortcut gotodir_list[GOTODIR_LIST_LEN];
 shortcut writefile_list[WRITEFILE_LIST_LEN];
-shortcut insertfile_list[INSERTFILE_LIST_LEN];
 shortcut help_list[HELP_LIST_LEN];
 shortcut spell_list[SPELL_LIST_LEN];
 #ifndef DISABLE_BROWSER
 shortcut browser_list[BROWSER_LIST_LEN];
-#endif
-
-#ifdef ENABLE_COLOR
-    colorstruct colors[NUM_NCOLORS];
-#endif
-
-#ifndef DISABLE_MOUSE
-shortcut *currshortcut = main_list;	/* Current shortcut list we're using */
-int currslen = MAIN_VISIBLE;		/* Length of current shortcut list */
 #endif
 
 #ifndef NANO_SMALL
@@ -139,8 +124,7 @@ void toggle_init(void)
 #ifndef NANO_SMALL
     char *toggle_const_msg, *toggle_autoindent_msg, *toggle_suspend_msg,
 	*toggle_nohelp_msg, *toggle_picomode_msg, *toggle_mouse_msg,
-	*toggle_cuttoend_msg, *toggle_wrap_msg, *toggle_case_msg, 
-	*toggle_backwards_msg;
+	*toggle_cuttoend_msg, *toggle_wrap_msg;
 #ifdef HAVE_REGEX_H
     char *toggle_regexp_msg;
 #endif
@@ -152,8 +136,6 @@ void toggle_init(void)
     toggle_picomode_msg = _("Pico mode");
     toggle_mouse_msg = _("Mouse support");
     toggle_cuttoend_msg = _("Cut to end");
-    toggle_backwards_msg = _("Backwards Search");
-    toggle_case_msg = _("Case Sensitive Search");
 #ifdef HAVE_REGEX_H
     toggle_regexp_msg = _("Regular expressions");
 #endif
@@ -175,12 +157,8 @@ void toggle_init(void)
 		    USE_MOUSE);
     toggle_init_one(&toggles[7], TOGGLE_CUTTOEND_KEY, toggle_cuttoend_msg,
 		    CUT_TO_END);
-    toggle_init_one(&toggles[8], TOGGLE_BACKWARDS_KEY, toggle_backwards_msg,
-		    REVERSE_SEARCH);
-    toggle_init_one(&toggles[9], TOGGLE_CASE_KEY, toggle_case_msg,
-		    CASE_SENSITIVE);    
 #ifdef HAVE_REGEX_H
-    toggle_init_one(&toggles[10], TOGGLE_REGEXP_KEY, toggle_regexp_msg,
+    toggle_init_one(&toggles[8], TOGGLE_REGEXP_KEY, toggle_regexp_msg,
 		    USE_REGEXP);
 #endif
 #endif
@@ -200,13 +178,10 @@ void shortcut_init(int unjustify)
 	"", *nano_mark_msg = "", *nano_delete_msg =
 	"", *nano_backspace_msg = "", *nano_tab_msg =
 	"", *nano_enter_msg = "", *nano_case_msg =
-	"", *nano_cancel_msg = "", *nano_unjustify_msg = 
-	"", *nano_append_msg = "", *nano_reverse_msg = 
-	"", *nano_regexp_msg = "";
+	"", *nano_cancel_msg = "", *nano_unjustify_msg = "";
 
 #ifndef NANO_SMALL
     char *nano_tofiles_msg = "";
-    char *nano_gotodir_msg = "";
 
     nano_help_msg = _("Invoke the help menu");
     nano_writeout_msg = _("Write the current file to disk");
@@ -241,11 +216,7 @@ void shortcut_init(int unjustify)
     nano_case_msg =
 	_("Make the current search or replace case (in)sensitive");
     nano_tofiles_msg = _("Go to file browser");
-    nano_gotodir_msg = _("Goto Directory");
     nano_cancel_msg = _("Cancel the current function");
-    nano_append_msg = _("Append to the current file");
-    nano_reverse_msg = _("Search Backwards");
-    nano_regexp_msg = _("Use Regular Expressions");
 #endif
 
 	sc_init_one(&main_list[0], NANO_HELP_KEY, _("Get Help"),
@@ -368,26 +339,20 @@ void shortcut_init(int unjustify)
     sc_init_one(&whereis_list[1], NANO_LASTLINE_KEY, _("Last Line"),
 		nano_lastline_msg, 0, 0, 0, VIEW, do_last_line);
 
-    sc_init_one(&whereis_list[2], NANO_OTHERSEARCH_KEY, _("Replace"),
+    sc_init_one(&whereis_list[2], NANO_CASE_KEY, _("Case Sens"),
+		nano_case_msg, 0, 0, 0, VIEW, 0);
+
+
+    sc_init_one(&whereis_list[3], NANO_OTHERSEARCH_KEY, _("Replace"),
 		nano_replace_msg, 0, 0, 0, VIEW, do_replace);
 
-    sc_init_one(&whereis_list[3], NANO_FROMSEARCHTOGOTO_KEY,
+    sc_init_one(&whereis_list[4], NANO_FROMSEARCHTOGOTO_KEY,
 		_("Goto Line"), nano_goto_msg, 0, 0, 0, VIEW,
 		do_gotoline_void);
 
-    sc_init_one(&whereis_list[4], NANO_CANCEL_KEY, _("Cancel"),
+    sc_init_one(&whereis_list[5], NANO_CANCEL_KEY, _("Cancel"),
 		nano_cancel_msg, 0, 0, 0, VIEW, 0);
 
-    sc_init_one(&whereis_list[5], TOGGLE_CASE_KEY, _("Case Sens"),
-		nano_case_msg, 0, 0, 0, VIEW, 0);
-
-    sc_init_one(&whereis_list[6], TOGGLE_BACKWARDS_KEY, _("Backward"),
-		nano_reverse_msg, 0, 0, 0, VIEW, 0);
-
-#ifdef HAVE_REGEX_H
-    sc_init_one(&whereis_list[7], TOGGLE_REGEXP_KEY, _("Regexp"),
-		nano_regexp_msg, 0, 0, 0, VIEW, 0);
-#endif
 
     sc_init_one(&replace_list[0], NANO_FIRSTLINE_KEY, _("First Line"),
 		nano_firstline_msg, 0, 0, 0, VIEW, do_first_line);
@@ -395,26 +360,19 @@ void shortcut_init(int unjustify)
     sc_init_one(&replace_list[1], NANO_LASTLINE_KEY, _("Last Line"),
 		nano_lastline_msg, 0, 0, 0, VIEW, do_last_line);
 
-    sc_init_one(&replace_list[2], NANO_OTHERSEARCH_KEY, _("No Replace"),
+    sc_init_one(&replace_list[2], NANO_CASE_KEY, _("Case Sens"),
+		nano_case_msg, 0, 0, 0, VIEW, 0);
+
+    sc_init_one(&replace_list[3], NANO_OTHERSEARCH_KEY, _("No Replace"),
 		nano_whereis_msg, 0, 0, 0, VIEW, do_search);
 
-    sc_init_one(&replace_list[3], NANO_FROMSEARCHTOGOTO_KEY,
+    sc_init_one(&replace_list[4], NANO_FROMSEARCHTOGOTO_KEY,
 		_("Goto Line"), nano_goto_msg, 0, 0, 0, VIEW,
 		do_gotoline_void);
 
-    sc_init_one(&replace_list[4], NANO_CANCEL_KEY, _("Cancel"),
+    sc_init_one(&replace_list[5], NANO_CANCEL_KEY, _("Cancel"),
 		nano_cancel_msg, 0, 0, 0, VIEW, 0);
 
-    sc_init_one(&replace_list[5], TOGGLE_CASE_KEY, _("Case Sens"),
-		nano_case_msg, 0, 0, 0, VIEW, 0);
-
-    sc_init_one(&replace_list[6], TOGGLE_BACKWARDS_KEY, _("Backward"),
-		nano_reverse_msg, 0, 0, 0, VIEW, 0);
-
-#ifdef HAVE_REGEX_H
-    sc_init_one(&replace_list[7], TOGGLE_REGEXP_KEY, _("Regexp"),
-		nano_regexp_msg, 0, 0, 0, VIEW, 0);
-#endif
 
 
     sc_init_one(&replace_list_2[0], NANO_FIRSTLINE_KEY, _("First Line"),
@@ -454,18 +412,7 @@ void shortcut_init(int unjustify)
 		nano_tofiles_msg, 0, 0, 0, NOVIEW, 0);
 #endif
 
-    sc_init_one(&writefile_list[WRITEFILE_LIST_LEN - 2], NANO_APPEND_KEY, _("Append"),
-		nano_append_msg, 0, 0, 0, NOVIEW, 0);
-
     sc_init_one(&writefile_list[WRITEFILE_LIST_LEN - 1], NANO_CANCEL_KEY, _("Cancel"),
-		nano_cancel_msg, 0, 0, 0, VIEW, 0);
-
-#ifndef DISABLE_BROWSER
-    sc_init_one(&insertfile_list[0], NANO_TOFILES_KEY, _("To Files"),
-		nano_tofiles_msg, 0, 0, 0, NOVIEW, 0);
-#endif
-
-    sc_init_one(&insertfile_list[INSERTFILE_LIST_LEN - 1], NANO_CANCEL_KEY, _("Cancel"),
 		nano_cancel_msg, 0, 0, 0, VIEW, 0);
 
     sc_init_one(&spell_list[0], NANO_CANCEL_KEY, _("Cancel"),
@@ -480,14 +427,8 @@ void shortcut_init(int unjustify)
 		nano_nextpage_msg,
 		0, NANO_NEXTPAGE_FKEY, KEY_NPAGE, VIEW, 0);
 
-    sc_init_one(&browser_list[2], NANO_GOTO_KEY, _("Goto"),
-		nano_gotodir_msg, 0, NANO_GOTO_FKEY, 0, VIEW, 0);
-
-    sc_init_one(&browser_list[3], NANO_EXIT_KEY, _("Exit"),
+    sc_init_one(&browser_list[2], NANO_EXIT_KEY, _("Exit"),
 		nano_exit_msg, 0, NANO_EXIT_FKEY, 0, VIEW, 0);
-
-    sc_init_one(&gotodir_list[0], NANO_CANCEL_KEY, _("Cancel"),
-		nano_cancel_msg, 0, 0, 0, VIEW, 0);
 
 #endif
 

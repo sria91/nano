@@ -34,9 +34,8 @@ extern int current_x, current_y, posible_max, totlines;
 extern int placewewant;
 extern int mark_beginx, samelinewrap;
 extern int totsize, temp_opt;
-extern int fill, wrap_at, flags,tabsize;
+extern int fill, flags,tabsize;
 extern int search_last_line;
-extern int currslen;
 
 extern WINDOW *edit, *topwin, *bottomwin;
 extern char *filename;
@@ -44,22 +43,17 @@ extern char *answer;
 extern char *hblank, *help_text;
 extern char *last_search;
 extern char *last_replace;
-#ifndef DISABLE_SPELLER
-extern  char *alt_speller;
-#endif
 extern struct stat fileinfo;
 extern filestruct *current, *fileage, *edittop, *editbot, *filebot; 
 extern filestruct *cutbuffer, *mark_beginbuf;
 extern shortcut *shortcut_list;
 extern shortcut main_list[MAIN_LIST_LEN], whereis_list[WHEREIS_LIST_LEN];
 extern shortcut replace_list[REPLACE_LIST_LEN], goto_list[GOTO_LIST_LEN];
-extern shortcut writefile_list[WRITEFILE_LIST_LEN], insertfile_list[INSERTFILE_LIST_LEN];
+extern shortcut writefile_list[WRITEFILE_LIST_LEN], help_list[HELP_LIST_LEN];
 extern shortcut spell_list[SPELL_LIST_LEN], replace_list_2[REPLACE_LIST_LEN];
-extern shortcut help_list[HELP_LIST_LEN];
 #ifndef DISABLE_BROWSER
-extern shortcut browser_list[BROWSER_LIST_LEN], gotodir_list[GOTODIR_LIST_LEN];
+extern shortcut browser_list[BROWSER_LIST_LEN];
 #endif
-extern shortcut *currshortcut;
 
 #ifdef HAVE_REGEX_H
 extern int use_regexp, regexp_compiled;
@@ -71,10 +65,8 @@ extern toggle toggles[TOGGLE_LEN];
 
 /* Programs we want available */
 
-char *revstrstr(char *haystack, char *needle, char *rev_start);
 char *strcasestr(char *haystack, char *needle);
-char *revstrcasestr(char *haystack, char *needle, char *rev_start);
-char *strstrwrapper(char *haystack, char *needle, char *rev_start);
+char *strstrwrapper(char *haystack, char *needle);
 int search_init(int replacing);
 int renumber(filestruct * fileptr);
 int free_filestruct(filestruct * src);
@@ -83,13 +75,13 @@ int do_yesno(int all, int leavecursor, char *msg, ...);
 int actual_x(filestruct * fileptr, int xplus);
 int strlenpt(char *buf);
 int statusq(int allowtabs, shortcut s[], int slen, char *def, char *msg, ...);
-int write_file(char *name, int tmpfile, int append, int nonamechange);
+int write_file(char *name, int tmpfile);
 int do_cut_text(void);
 int do_uncut_text(void);
 int no_help(void);
 int renumber_all(void);
 int open_file(char *filename, int insert, int quiet);
-int do_writeout(char *path, int exiting, int append);
+int do_writeout(char *path, int exiting);
 int do_gotoline(long defline);
 int do_replace_loop(char *prevanswer, filestruct *begin, int *beginx,
 			int wholewords, int *i);
@@ -148,19 +140,10 @@ void add_to_cutbuffer(filestruct * inptr);
 void do_replace_highlight(int highlight_flag, char *word);
 void nano_disabled_msg(void);
 void window_init(void);
-void do_mouse(void);
 void print_view_warning(void);
-void cut_marked_segment(filestruct * top, int top_x, filestruct * bot,
-                        int bot_x, int destructive);
-
-#ifdef ENABLE_NANORC
-void do_rcfile(void);
-#endif
-
 #ifdef NANO_EXTRA
 void do_credits(void);
 #endif
-
 
 int do_writeout_void(void), do_exit(void), do_gotoline_void(void);
 int do_insertfile(void), do_search(void), page_up(void), page_down(void);
@@ -172,21 +155,11 @@ int do_first_line(void), do_last_line(void);
 int do_replace(void), do_help(void), do_enter_void(void);
 int keypad_on(WINDOW * win, int newval);
 
-char *charalloc (size_t howmuch);
-
 #ifndef DISABLE_BROWSER
 char *do_browser(char *path);
 struct stat filestat(const char *path);
 char *do_browse_from(char *inpath);
 #endif
-
-#ifdef ENABLE_COLOR
-int do_colorinit(void);
-void color_on(WINDOW *win, int whatever);
-void color_off(WINDOW *win, int whatever);
-
-extern colorstruct colors[NUM_NCOLORS];
-#endif /* ENABLE_COLOR */
 
 RETSIGTYPE main_loop (int junk);
 

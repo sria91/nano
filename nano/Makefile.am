@@ -1,14 +1,12 @@
 ## $Id$
 bin_PROGRAMS = 	nano
-nano_SOURCES =	color.c \
-		cut.c \
+nano_SOURCES =	cut.c \
 		files.c \
 		global.c \
 		move.c \
 		nano.c \
 		nano.h \
 		proto.h \
-		rcfile.c \
 		search.c \
 		utils.c \
 		winio.c 
@@ -21,7 +19,7 @@ MAKEINFO = makeinfo --no-split
 
 EXTRA_DIST =	ABOUT-NLS AUTHORS BUGS COPYING ChangeLog INSTALL NEWS \
 		README THANKS TODO install-sh missing mkinstalldirs \
-		nano.1 nano.1.html faq.html nanorc.sample
+		nano.1 nano.1.html faq.html
 
 SUBDIRS = po intl
 

@@ -55,11 +55,11 @@ void regexp_cleanup(void)
 void search_init_globals(void)
 {
     if (last_search == NULL) {
-	last_search = charalloc(1);
+	last_search = nmalloc(1);
 	last_search[0] = 0;
     }
     if (last_replace == NULL) {
-	last_replace = charalloc(1);
+	last_replace = nmalloc(1);
 	last_replace[0] = 0;
     }
 }
@@ -72,14 +72,14 @@ void search_init_globals(void)
 */
 int search_init(int replacing)
 {
-    int i = 0, j;
+    int i = 0;
     char *buf;
-    char *prompt;
+    char *prompt, *reprompt = "";
     static char *backupstring = NULL;
 
     search_init_globals();
 
-    buf = charalloc(strlen(last_search) + 5);
+    buf = nmalloc(strlen(last_search) + 5);
     buf[0] = 0;
 
      /* Okay, fun time.  backupstring is our holder for what is being 
@@ -114,21 +114,22 @@ int search_init(int replacing)
     else
 	strcpy(buf, "");
 
-     /* Instead of having a million if statements here to determine
-	the prompt, we instead just have a hundred "? :" calls in
-	the statusq call.  I hope no one ever has to modify this :-) */
-    prompt = "%s%s%s%s%s%s";
+    if (ISSET(USE_REGEXP) && ISSET(CASE_SENSITIVE))
+	prompt = _("Case Sensitive Regexp Search%s%s");
+    else if (ISSET(USE_REGEXP))
+	prompt = _("Regexp Search%s%s");
+    else if (ISSET(CASE_SENSITIVE))
+	prompt = _("Case Sensitive Search%s%s");
+    else
+	prompt = _("Search%s%s");
+
+    if (replacing)
+	reprompt = _(" (to replace)");
 
     /* This is now one simple call.  It just does a lot */
     i = statusq(0, replacing ? replace_list : whereis_list,
 	replacing ? REPLACE_LIST_LEN : WHEREIS_LIST_LEN, backupstring,
-	prompt, 
-	ISSET(CASE_SENSITIVE) ? _("Case Sensitive ") : "",
-	ISSET(USE_REGEXP) ? _("Regexp ") : "",
-	_("Search"),
-	ISSET(REVERSE_SEARCH) ? _(" Backwards") : "",
-	replacing ? _(" (to replace)") : "",
-	buf);
+	prompt, reprompt, buf);
 
     /* Cancel any search, or just return with no previous search */
     if ((i == -1) || (i < 0 && !last_search[0])) {
@@ -137,10 +138,7 @@ int search_init(int replacing)
 	free(backupstring);
 	backupstring = NULL;
 	return -1;
-    } else 
-    switch (i) {
-
-    case -2:	/* Same string */
+    } else if (i == -2) {	/* Same string */
 #ifdef HAVE_REGEX_H
 	if (ISSET(USE_REGEXP)) {
 
@@ -150,9 +148,10 @@ int search_init(int replacing)
 	    else
 		regexp_init(answer);
 	}
+#else
+	;
 #endif
-	break;
-    case 0:		/* They entered something new */
+    } else if (i == 0) {	/* They entered something new */
 #ifdef HAVE_REGEX_H
 	if (ISSET(USE_REGEXP))
 	    regexp_init(answer);
@@ -160,41 +159,26 @@ int search_init(int replacing)
 	free(backupstring);
 	backupstring = NULL;
 	last_replace[0] = '\0';
-	break;
-    case TOGGLE_CASE_KEY:
-    case TOGGLE_BACKWARDS_KEY:
-#ifdef HAVE_REGEX_H
-    case TOGGLE_REGEXP_KEY:
-#endif
+    } else if (i == NANO_CASE_KEY) {	/* They want it case sensitive */
 	free(backupstring);
 	backupstring = NULL;
 	backupstring = mallocstrcpy(backupstring, answer);
 
-	for (j = 0; j <= TOGGLE_LEN - 1; j++)
-	    if (i == toggles[j].val)
-		TOGGLE(toggles[j].flag);
+	if (ISSET(CASE_SENSITIVE))
+	    UNSET(CASE_SENSITIVE);
+	else
+	    SET(CASE_SENSITIVE);
 
 	return 1;
-    case NANO_OTHERSEARCH_KEY:
+    } else if (i == NANO_OTHERSEARCH_KEY) {
 	backupstring = mallocstrcpy(backupstring, answer);
 	return -2;		/* Call the opposite search function */
-/*
-    } else if (i == NANO_REVERSESEARCH_KEY) {
-	free(backupstring);
-	backupstring = NULL;
-	backupstring = mallocstrcpy(backupstring, answer);
-
-	TOGGLE(REVERSE_SEARCH);
-
-	return 1;
     } else if (i == NANO_FROMSEARCHTOGOTO_KEY) {
-*/
-    case NANO_FROMSEARCHTOGOTO_KEY:
 	free(backupstring);
 	backupstring = NULL;
 	do_gotoline_void();
 	return -3;
-    default:
+    } else {			/* First line key, etc. */
 	do_early_abort();
 	free(backupstring);
 	backupstring = NULL;
@@ -223,124 +207,68 @@ filestruct *findnextstr(int quiet, filestruct * begin, int beginx,
 			char *needle)
 {
     filestruct *fileptr;
-    char *searchstr, *rev_start = NULL, *found = NULL;
+    char *searchstr, *found = NULL, *tmp;
     int past_editbot = 0, current_x_find;
 
     fileptr = current;
 
-    if (!ISSET(REVERSE_SEARCH)) {		/* forward search */
+    current_x_find = current_x + 1;
 
-	current_x_find = current_x + 1;
+    /* Are we searching the last line? (i.e. the line where search started) */
+    if ((fileptr == begin) && (current_x_find < beginx))
+	search_last_line = 1;
 
-	/* Are we now back to the line where the search started) */
-	if ((fileptr == begin) && (current_x_find < beginx))
-	    search_last_line = 1;
+    /* Make sure we haven't passed the end of the string */
+    if (strlen(fileptr->data) < current_x_find)
+	current_x_find--;
 
-	/* Make sure we haven't passed the end of the string */
-	if (strlen(fileptr->data) < current_x_find)
-	    current_x_find--;
+    searchstr = &fileptr->data[current_x_find];
 
-	searchstr = &fileptr->data[current_x_find];
+    /* Look for needle in searchstr */
+    while ((found = strstrwrapper(searchstr, needle)) == NULL) {
 
-	/* Look for needle in searchstr */
-	while ((found = strstrwrapper(searchstr, needle, rev_start)) == NULL) {
-
-	    /* finished processing file, get out */
-	    if (search_last_line) {
-		if (!quiet)
-		    not_found_msg(needle);
-	        return NULL;
-	    }
-
-	    fileptr = fileptr->next;
-
-	    if (!past_editbot && (fileptr == editbot))
-		past_editbot = 1;
-
-	    /* EOF reached ?, wrap around once */
-	    if (fileptr == NULL) {
-		fileptr = fileage;
-		past_editbot = 1;
-		if (!quiet)
-		    statusbar(_("Search Wrapped"));
-	    }
-
-	    /* Original start line reached */
-	    if (fileptr == begin)
-		search_last_line = 1;
-
-	    searchstr = fileptr->data;
-	}
-
-	/* We found an instance */
-	current_x_find = found - fileptr->data;
-
-	/* Ensure we haven't wrapped around again! */
-	if ((search_last_line) && (current_x_find >= beginx)) {
+	/* finished processing file, get out */
+	if (search_last_line) {
 	    if (!quiet)
 		not_found_msg(needle);
 	    return NULL;
 	}
 
-    } else {	/* reverse search */
+	fileptr = fileptr->next;
 
-	current_x_find = current_x - 1;
+	if (!past_editbot && (fileptr == editbot))
+	    past_editbot = 1;
 
-	/* Are we now back to the line where the search started) */
-	if ((fileptr == begin) && (current_x_find > beginx))
+	/* EOF reached, wrap around once */
+	if (fileptr == NULL) {
+	    fileptr = fileage;
+
+	    past_editbot = 1;
+
+	    if (!quiet)
+		statusbar(_("Search Wrapped"));
+	}
+
+	/* Original start line reached */
+	if (fileptr == begin)
 	    search_last_line = 1;
 
-	/* Make sure we haven't passed the begining of the string */
-#if 0	/* Is this required here ? */
-	if (!(&fileptr->data[current_x_find] - fileptr->data))      
-	    current_x_find++;
-#endif
-	rev_start = &fileptr->data[current_x_find];
 	searchstr = fileptr->data;
-
-	/* Look for needle in searchstr */
-	while ((found = strstrwrapper(searchstr, needle, rev_start)) == NULL) {
-
-	    /* finished processing file, get out */
-	    if (search_last_line) {
-		if (!quiet)
-		    not_found_msg(needle);
-		return NULL;
-	    }
-
-	    fileptr = fileptr->prev;
-
-/* ? */	    if (!past_editbot && (fileptr == edittop->prev))
-		past_editbot = 1;
-
-	    /* SOF reached ?, wrap around once */
-/* ? */	    if (fileptr == NULL) {
-		fileptr = filebot;
-		past_editbot = 1;
-		if (!quiet)
-		    statusbar(_("Search Wrapped"));
-	    }
-
-	    /* Original start line reached */
-	    if (fileptr == begin)
-		search_last_line = 1;
-
-	    searchstr = fileptr->data;
-	    rev_start = fileptr->data + strlen(fileptr->data);
-	}
-
-	/* We found an instance */
-	current_x_find = found - fileptr->data;
-
-	/* Ensure we haven't wrapped around again! */
-	if ((search_last_line) && (current_x_find < beginx)) {
-	    if (!quiet)
-		not_found_msg(needle);
-	    return NULL;
-	}
     }
 
-    /* Set globals now that we are sure we found something */
+    /* We found an instance */
+    current_x_find = 0;
+    for (tmp = fileptr->data; tmp != found; tmp++)
+	current_x_find++;
+
+    /* Ensure we haven't wrapped around again! */
+    if ((search_last_line) && (current_x_find >= beginx)) {
+	if (!quiet)
+	    not_found_msg(needle);
+	return NULL;
+    }
+
+    /* Set globals, now that we are sure we found something */
     current = fileptr;
     current_x = current_x_find;
 
@@ -519,7 +447,7 @@ char *replace_line(void)
     }
 
     /* Create buffer */
-    copy = charalloc(new_line_size);
+    copy = nmalloc(new_line_size);
 
     /* Head of Original Line */
     strncpy(copy, current->data, current_x);
@@ -700,7 +628,7 @@ int do_replace(void)
     }
 
     if (ISSET(PICO_MODE)) {
-	buf = charalloc(strlen(last_replace) + 5);
+	buf = nmalloc(strlen(last_replace) + 5);
 	if (strcmp(last_replace, "")) {
 	    if (strlen(last_replace) > (COLS / 3)) {
 		strncpy(buf, last_replace, COLS / 3);
@@ -743,36 +671,55 @@ void goto_abort(void)
     display_main_list();
 }
 
-int do_gotoline(long line)
+int do_gotoline(long defline)
 {
-    long i = 1;
+    long line, i = 1, j = 0;
+    filestruct *fileptr;
 
-    if (line <= 0) {		/* Ask for it */
-
-	long j = 0;
+    if (defline > 0)		/* We already know what line we want to go to */
+	line = defline;
+    else {			/* Ask for it */
 
 	j = statusq(0, goto_list, GOTO_LIST_LEN, "", _("Enter line number"));
-	if (j != 0) {
+	if (j == -1) {
 	    statusbar(_("Aborted"));
 	    goto_abort();
 	    return 0;
-	}
-
-	line = atoi(answer);
-
-	/* Bounds check */
-	if (line <= 0) {
-	    statusbar(_("Come on, be reasonable"));
+	} else if (j != 0) {
+	    do_early_abort();
 	    goto_abort();
 	    return 0;
 	}
+	if (!strcmp(answer, "$")) {
+	    current = filebot;
+	    current_x = 0;
+	    edit_update(current, CENTER);
+	    goto_abort();
+	    return 1;
+	}
+	line = atoi(answer);
     }
 
-    for (current = fileage; ((current->next != NULL) && (i < line)); i++)
-	current = current->next;
+    /* Bounds check */
+    if (line <= 0) {
+	statusbar(_("Come on, be reasonable"));
+	goto_abort();
+	return 0;
+    }
+    if (line > totlines) {
+	statusbar(_("Only %d lines available, skipping to last line"),
+		  filebot->lineno);
+	current = filebot;
+	current_x = 0;
+	edit_update(current, CENTER);
+    } else {
+	for (fileptr = fileage; fileptr != NULL && i < line; i++)
+	    fileptr = fileptr->next;
 
-    current_x = 0;
-    edit_update(current, CENTER);
+	current = fileptr;
+	current_x = 0;
+	edit_update(current, CENTER);
+    }
 
     goto_abort();
     return 1;
