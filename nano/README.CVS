@@ -1,46 +1,38 @@
 INSTRUCTIONS TO COMPILE AND INSTALL NANO CVS VERSIONS
 -----------------------------------------------------
 
-GNU nano is available from CVS, but building this needs a bit more care
-than the official stable and unstable tarballs.
+GNU nano is available from CVS, but building this needs a bit
+more care than the official stable and unstable tarballs.
 
-To successfully compile GNU nano from CVS, you'll need the following
-packages:
+To successfully compile GNU nano from CVS, you'll need the
+following packages:
 
-- autoconf (version >= 2.54)
-- automake (version >= 1.7)
+- autoconf (version >= 2.52)
+- automake (version >= 1.6, 1.7.x recommended)
 - gettext (version >= 0.11.5)
-- groff
 - texinfo
 - cvs
-- ssh (with support for the SSH version 2 protocol)
-- glib 2.x (if your system doesn't have snprintf() and/or vsnprintf())
-- make, gcc and the normal development libraries (curses or slang, etc.)
+- glib (if your system doesn't have snprintf() and/or vsnprintf())
+- make, gcc and the normal development libraries (ncurses, etc)
+These should be available on your GNU mirror.
 
-These should be available on your GNU mirror.  Note that you'll need a
-version of curses or slang with wide character support if you want nano
-to use UTF-8.
 
-First, you need to set up cvs to download the CVS tree using ssh.  If
-you're using a Bourne shell (e.g. bash or sh), do
-$ export CVS_RSH=ssh
-If you're using a C shell (e.g. tcsh or csh), do
-$ setenv CVS_RSH ssh
-
-After it's set up, use the following command to download the CVS tree:
-$ cvs -z3 -d:ext:anoncvs@savannah.gnu.org:/cvsroot/nano checkout nano
-
-If you want to download the stable CVS branch, add "-r nano_1_2_branch":
-$ cvs -z3 -d:ext:anoncvs@savannah.gnu.org:/cvsroot/nano checkout -r nano_1_2_branch nano
+To download the CVS tree, execute the following command:
+$ cvs -z3 -d:pserver:anoncvs@subversions.gnu.org:/cvsroot/nano login
+and press enter at the password prompt.
+Then, do
+$ cvs -z3 -d:pserver:anoncvs@subversions.gnu.org:/cvsroot/nano checkout nano
+and the nano tree will download.
+If you want to checkout the stable CVS branch, append -r nano_1_0_branch:
+$ cvs -z3 -d:pserver:anonymous@subversions.gnu.org:/cvsroot/nano checkout -r nano_1_0_branch nano
 
 Once you have the sources in the "nano" directory, cd into it, and
-execute the "autogen.sh" script in the top directory.  This will set up
-a configure script and Makefile.in, and you will be ready to compile
-with
+execute the "autogen.sh" script in the top dir. This will setup a
+configure script and Makefile.in, and you will be ready to compile with
 $ ./configure [--add-options-here] && make
-
 Once it's done compiling,
 $ make install
 (as root) should put the required files in their respective directories.
+
 
 Please submit any bugs in the CVS branch to nano-devel@gnu.org.

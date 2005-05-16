@@ -4,7 +4,6 @@ If we missed you here, let us know!
 Sharuzzaman Ahmat Raslan <sharuzzaman@excite.com>
 						Malay translator
 Laurentiu Buzdugan <buzdugan@voyager.net>	Romanian translator
-CHAO Wei-Lun <chaoweilun@pcmail.com.tw>		Traditional Chinese translator
 Ricardo Cárdenes Medina <ricardo@conisys.com>	Spanish translator
 Marco Colombo <magicdice@inwind.it>		Italian translator
 Karl Eichwalder <keichwa@gmx.net>		German translator
@@ -37,7 +36,6 @@ Pierre Tane <tanep@bigfoot.com>			French translator
 Jacobo Tarrío <jtarrio@trasno.net>		Galician translator
 Kjetil Torgrim Homme <kjetilho@linpro.no>	Norwegian nynorsk translator
 Miquel Vidal <miquel@sindominio.net>		Catalan translator
-Phan Vinh Thinh <teppi82@gmail.com>		Vietnamese translator
 Pauli Virtanen <pauli.virtanen@saunalahti.fi>	Finnish translator
 Peio Ziarsolo <peio@sindominio.net>		Basque translator
 
@@ -53,5 +51,6 @@ Neil Parks <nparks@acsmail.com>			Bug reports and fixes
 Jeremy Robichaud <robicj@yahoo.com>		Beta tester
 Bill Soudan <wes0472@rit.edu>			Regex code, etc
 Ken Tyler <kent@werple.net.au>			Search fixes and more
+
 
 $Id$
